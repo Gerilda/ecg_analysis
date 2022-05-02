@@ -109,12 +109,12 @@ def straight_connection_block(
         downsample: int,
         kernel_size: int,
         dropout_prob: float = 0.5,
-        activataion: activation_funcs = "relu",
+        activation: activation_funcs = "relu",
 ) -> nn.Module:
     block = nn.Sequential(
         nn.Conv1d(in_channels, out_channels, kernel_size, padding=kernel_size // 2),
         nn.BatchNorm1d(out_channels),
-        activation_func(activataion),
+        activation_func(activation),
         nn.Dropout(dropout_prob),
         nn.Conv1d(out_channels, out_channels, kernel_size, downsample, kernel_size // 2)
     )
