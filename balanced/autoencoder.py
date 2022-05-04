@@ -6,7 +6,7 @@ from torch import nn, optim
 from tqdm import tqdm
 import time
 
-from balanced.custom_dataset import LRScheduler, EarlyStopping
+from balanced.autoencoder_dataset import LRScheduler, EarlyStopping
 
 
 def conv_block(
@@ -46,7 +46,7 @@ class ECG_NN(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         encoded = self.encoder(x)
-        decoded = self.decoded(encoded)
+        decoded = self.decoder(encoded)
         return decoded
 
     def call_encoder(self, x):
@@ -112,17 +112,22 @@ def train_step(model, train_dataloader, train_dataset, optimizer, criterion, dev
     total = 0
     # print(len(train_dataset))
     # print(train_dataloader.batch_size)
-    # prog_bar = tqdm(train_dataloader, total=int(len(train_dataset) / train_dataloader.batch_size))
-    for i, data in enumerate(train_dataloader):
+    prog_bar = tqdm(enumerate(train_dataloader), total=int(len(train_dataset) / train_dataloader.batch_size))
+    for i, data in prog_bar:
         counter += 1
-        data, target = data[0].to(device), data[1].to(device)
-        total += target.size(0)
+        # data = target, X=X
+        # data, target = data[0].to(device), data[0].to(device)
+        data = data[0].to(device)
+        # total += target.size(0)
+        total += data.size(0)
         optimizer.zero_grad()
-        outputs = model(data)
-        loss = criterion(outputs, target)
+        outputs = model(data) # (batch_features)
+        # loss = criterion(outputs, target)
+        loss = criterion(outputs, data)
         train_running_loss += loss.item()
         _, preds = torch.max(outputs.data, 1)
-        train_running_correct += (preds == target).sum().item()
+        # train_running_correct += (preds == target).sum().item()
+        train_running_correct += (preds == data).sum().item()
         loss.backward()
         optimizer.step()
 
@@ -142,14 +147,19 @@ def val_step(model, test_dataloader, test_dataset, criterion, device):
     with torch.no_grad():
         for i, data in prog_bar:
             counter += 1
-            data, target = data[0].to(device), data[1].to(device)
-            total += target.size(0)
+            # X = X проверка в энкодере, поэтому y=X
+            # data, target = data[0].to(device), data[1].to(device)
+            data = data[0].to(device)
+            # total += data.target(0)
+            total += data.size(0)
             outputs = model(data)
-            loss = criterion(outputs, target)
+            # loss = criterion(outputs, target)
+            loss = criterion(outputs, data)
 
             val_running_loss += loss.item()
             _, preds = torch.max(outputs.data, 1)
-            val_running_correct += (preds == target).sum().item()
+            # val_running_correct += (preds == target).sum().item()
+            val_running_correct += (preds == data).sum().item()
 
         val_loss = val_running_loss / counter
         return val_loss

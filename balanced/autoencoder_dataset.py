@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 # from torchvision.io import read_image
 import torch
 from torch.utils.data import Dataset
@@ -7,27 +8,49 @@ from torch.utils.data import Dataset
 # from torchvision.transforms import ToTensor
 # import matplotlib.pyplot as plt
 
-class CustomDataset(Dataset):
-    def __init__(self, X, y, transform=None, target_transform=None):
+
+class AutoencoderDataset(Dataset):
+    """Implement dataset for autoencoder 3d to 2d"""
+    X: np.ndarray
+    y: np.ndarray
+    idx: int
+    length: int
+
+    # def __init__(self, X, y, transform=None, target_transform=None):
+    def __init__(
+            self,
+            X: np.ndarray,
+            y: np.ndarray,
+    ) -> None:
+        """Create dataset from user X and y"""
+
+        X_len, y_len = len(X), len(y)
+
+        if X_len != y_len:
+            raise ValueError(
+                f"Length of X and y must be the same,"
+                f"but it's {X_len}, {y_len} respectively"
+            )
+
         self.X = X
         self.y = y
-        self.transform = transform
-        self.target_transform = target_transform
+        self.length = X_len
+        # self.transform = transform
+        # self.target_transform = target_transform
 
     def __len__(self) -> int:
-        return len(self.y)
+        return self.length
 
     def __getitem__(self, idx):
-        print("X[idx]", self.X[idx])
-        print("y[idx]", self.y[idx])
-        return self.X[idx], self.y[idx]
-        # X = self.X[idx]
-        # y = self.y[idx]
-        # return (
-        #     torch.tensor(X, dtype=torch.float32),
-        #     torch.tensor(y, dtype=torch.float32)
-        # )
+        # return self.X[idx], self.y[idx]
 
+        return (
+            torch.tensor(self.X[idx], dtype=torch.float32),
+            torch.tensor(self.y[idx], dtype=torch.float32)
+        )
+
+
+# https://colab.research.google.com/drive/1krRZ-VVfpXUsHk3JFCjBtYUiUOwL8vW0?usp=sharing#scrollTo=TBuoZ1PgK01f
 
 class LRScheduler():
     """

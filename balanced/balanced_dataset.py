@@ -28,7 +28,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 from balanced.autoencoder import buil_compile_fit_ECG_NN
-from balanced.custom_dataset import CustomDataset
+from balanced.autoencoder_dataset import AutoencoderDataset
 
 
 class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
@@ -122,9 +122,12 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         # self._waves_train.take(axis=1)
         X_resampled = self._waves_train
         print(self._waves_train.shape)
+
+        y = self.y_balance_train
+        # y = y_balanced_encoded_train
+
         for i in range(12):
             X = self._waves_train[:, i]
-            y = self.y_balance
 
             X_resampled_i, y_resampled = method.fit_resample(X, y)
             print(self.counter_dict_class(y_resampled))
@@ -140,31 +143,21 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         X = self._waves_train
         y = self.y_balance_train
 
-        X_train, X_test, y_train, y_test = train_test_split(
-                                            X, y, test_size=0.33, random_state=42)
+        dataset_train = AutoencoderDataset(self._waves_train, self.y_balanced_encoded_train)
+        dataset_test = AutoencoderDataset(self._waves_test, self.y_balanced_encoded_test)
 
-        # print(X_train.shape)
-        # print(X_train[0])
-        # print(y.shape)
-        # print(y[0])
-        #
-        train_dataset = CustomDataset(X_train, y_train)
-        test_dataset = CustomDataset(X_test, y_test)
-        #
-        # print(train_dataset[0])
+        # train_dl = self.make_train_dataloader()
+        # test_dl = self.make_test_dataloader()
 
-        train_dl = self.make_train_dataloader()
-        test_dl = self.make_test_dataloader()
-
-        train_dataloader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=128, shuffle=True, pin_memory=True
+        dataloader_train = torch.utils.data.DataLoader(
+            dataset_train, batch_size=128, shuffle=True, pin_memory=True
         )
 
-        test_dataloader = torch.utils.data.DataLoader(
-            test_dataset, batch_size=32, shuffle=False
+        dataloader_test = torch.utils.data.DataLoader(
+            dataset_test, batch_size=32, shuffle=False
         )
 
-        autoencoder = buil_compile_fit_ECG_NN(train_dataloader, train_dataset, test_dataloader, test_dataset)
+        autoencoder = buil_compile_fit_ECG_NN(dataloader_train, dataset_train, dataloader_test, dataset_test)
         X_2d = autoencoder.call(X)
 
         X_resampled, y_resampled = method.fit_resample(X_2d, y)
@@ -172,7 +165,9 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
 
         return X_resampled, y_resampled
 
-    def counter_dict_class(self, tabular_column):
+    @staticmethod
+    # def counter_dict_class(self, tabular_column):
+    def counter_dict_class(tabular_column):
         """Creates the counter of classes in the tabular by column"""
 
         if type(tabular_column[0]) is tuple:
@@ -247,7 +242,7 @@ def main():
         balanced_batch_size=128
     )
 
-    # dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
+    X_resampled, y_resampled = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
     # dataset.balanced_by_imbalanced_learn_method(SMOTE())
     #
     # dataset.balanced_by_imbalanced_learn_method(RandomUnderSampler(random_state=0))
@@ -255,6 +250,7 @@ def main():
     # start_time = datetime.now()
     # # dataset.balanced_by_imbalanced_learn_method(ClusterCentroids(random_state=0)) # looooong time
     # print("--- %s seconds ---" % (datetime.now() - start_time))
+    # эту запускаю для энкодировщика
     dataset.balanced_by_imbalanced_learn_method_witn_autoencoder(EditedNearestNeighbours())# need parameters
     # dataset.balanced_by_imbalanced_learn_method(RepeatedEditedNearestNeighbours())# need parameters
     # start_time = datetime.now()
@@ -269,7 +265,14 @@ def main():
     # #                                                                       ))# IndexError: arrays used as indices must be of integer (or boolean) type
     # dataset.balanced_by_imbalanced_learn_method(SMOTEENN(random_state=0))# need parameters
     # dataset.balanced_by_imbalanced_learn_method(SMOTETomek(random_state=0))
-    dataset.balanced_by_imbalanced_learn_method(TomekLinks())
+    # dataset.balanced_by_imbalanced_learn_method(TomekLinks())
+
+    print(X_resampled)
+    print(y_resampled)
+
+    train_dl = DataLoader(
+        PtbXl(X_resampled, y_resampled),
+        batch_size=dataset.batch_size)
 
 
     # Create the data loaders
