@@ -7,6 +7,7 @@ from tqdm import tqdm
 import time
 
 from balanced.autoencoder_dataset import LRScheduler, EarlyStopping
+from balanced.autoencoder_dataset import AutoencoderDataset
 
 
 def conv_block(
@@ -21,7 +22,7 @@ def conv_block(
             input_size,
             output_size,
             kernel_size=kernel_size,
-            padding=kernel_size // 2
+            padding="same"
         ),
         nn.BatchNorm1d(output_size),
         nn.ReLU(inplace=True),
@@ -44,18 +45,33 @@ class ECG_NN(nn.Module):
             conv_block(input_size=6, output_size=kwargs["input_shape"], kernel_size=5),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return decoded
 
     def call_encoder(self, x):
-        encoded = self.encoder(x)
-        return encoded
+        return self.encoder(x)
 
     def call_decoder(self, x):
-        decoded = self.decoder(x)
-        return decoded
+        return self.decoder(x)
+
+    def run_model(self, x):
+        dataset_train = AutoencoderDataset(x)
+        dataloader_train = torch.utils.data.DataLoader(
+            dataset_train, batch_size=128, shuffle=True, pin_memory=True
+        )
+
+        outputs = []
+        #self = self.eval()
+        self.eval()
+        for i, data in enumerate(dataloader_train):
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            data = data.to(device)
+            output = self(data).numpy()
+            outputs.append(output)
+
+        return outputs
 
 
 # def build_tf_callbacks():
@@ -115,28 +131,27 @@ def train_step(model, train_dataloader, train_dataset, optimizer, criterion, dev
     prog_bar = tqdm(enumerate(train_dataloader), total=int(len(train_dataset) / train_dataloader.batch_size))
     for i, data in prog_bar:
         counter += 1
-        # data = target, X=X
+        # X = X проверка в энкодере, поэтому y=X
         # data, target = data[0].to(device), data[0].to(device)
-        data = data[0].to(device)
+        data = data.to(device)
         # total += target.size(0)
         total += data.size(0)
         optimizer.zero_grad()
-        outputs = model(data) # (batch_features)
+        outputs = model(data)
         # loss = criterion(outputs, target)
         loss = criterion(outputs, data)
         train_running_loss += loss.item()
-        _, preds = torch.max(outputs.data, 1)
+        # _, preds = torch.max(outputs.data, 1)
         # train_running_correct += (preds == target).sum().item()
-        train_running_correct += (preds == data).sum().item()
         loss.backward()
         optimizer.step()
 
     train_loss = train_running_loss / counter
     return train_loss
 
-
 # validation function
 def val_step(model, test_dataloader, test_dataset, criterion, device):
+    print()
     print('Validating')
     model.eval()
     val_running_loss = 0.0
@@ -149,7 +164,7 @@ def val_step(model, test_dataloader, test_dataset, criterion, device):
             counter += 1
             # X = X проверка в энкодере, поэтому y=X
             # data, target = data[0].to(device), data[1].to(device)
-            data = data[0].to(device)
+            data = data.to(device)
             # total += data.target(0)
             total += data.size(0)
             outputs = model(data)
@@ -157,9 +172,8 @@ def val_step(model, test_dataloader, test_dataset, criterion, device):
             loss = criterion(outputs, data)
 
             val_running_loss += loss.item()
-            _, preds = torch.max(outputs.data, 1)
+            # _, preds = torch.max(outputs.data, 1)
             # val_running_correct += (preds == target).sum().item()
-            val_running_correct += (preds == data).sum().item()
 
         val_loss = val_running_loss / counter
         return val_loss
@@ -193,6 +207,7 @@ def fit(model, train_dataloader, train_dataset, test_dataloader, test_dataset, o
             if early_stopping.early_stop:
                 break
 
+        print()
         print(f"Train Loss: {train_epoch_loss:.4f}")
         print(f'Val Loss: {test_epoch_loss:.4f}')
 
@@ -211,7 +226,7 @@ def buil_compile_fit_ECG_NN(train_dataloader, train_dataset, test_dataloader, te
     #     optimizer=optim.Adam(learning_rate=1e-05),
     #     loss='mae'
     # )
-    optimizer = optim.Adam(model.parameters(), lr=1e-05)
+    optimizer = optim.Adam(model.parameters(), lr=1e-03)
     # mean-squared error loss
     criterion = nn.MSELoss()
 

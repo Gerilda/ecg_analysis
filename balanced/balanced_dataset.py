@@ -27,7 +27,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from balanced.autoencoder import buil_compile_fit_ECG_NN
+from balanced.autoencoder import ECG_NN, buil_compile_fit_ECG_NN
 from balanced.autoencoder_dataset import AutoencoderDataset
 
 
@@ -140,25 +140,83 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
     def balanced_by_imbalanced_learn_method_witn_autoencoder(self, method):
         print("Balansed by: ", method)
 
-        X = self._waves_train
         y = self.y_balance_train
+# self.y_balanced_encoded_train
+        print(self._waves_train.shape)
 
-        dataset_train = AutoencoderDataset(self._waves_train, self.y_balanced_encoded_train)
-        dataset_test = AutoencoderDataset(self._waves_test, self.y_balanced_encoded_test)
+        if not os.path.exists("model_autoencoder.pt"):
+            dataset_train = AutoencoderDataset(self._waves_train)
+            dataset_test = AutoencoderDataset(self._waves_test)
 
-        # train_dl = self.make_train_dataloader()
-        # test_dl = self.make_test_dataloader()
+            # train_dl = self.make_train_dataloader()
+            # test_dl = self.make_test_dataloader()
 
+            dataloader_train = torch.utils.data.DataLoader(
+                dataset_train, batch_size=128, shuffle=True, pin_memory=True
+            )
+
+            dataloader_test = torch.utils.data.DataLoader(
+                dataset_test, batch_size=32, shuffle=False
+            )
+
+            model_autoencoder = buil_compile_fit_ECG_NN(dataloader_train, dataset_train, dataloader_test, dataset_test)
+
+            # Save model weights
+            # os.path.join("balanced", "model_autoencoder.pt")
+            torch.save(model_autoencoder.state_dict(), "model_autoencoder.pt")
+
+        model_weight = torch.load("model_autoencoder.pt")
+        model_loaded = ECG_NN(input_shape=12)
+        model_loaded.load_state_dict(model_weight)
+
+        dataset_train = AutoencoderDataset(self._waves_train)
+        dataloader_train = torch.utils.data.DataLoader(
+            dataset_train, batch_size=128, shuffle=False, pin_memory=True
+        )
+
+        outputs = []
+        model_loaded.eval()
+        for i, data in enumerate(dataloader_train):
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            data = data.to(device)
+            output = model_loaded(data).detach().numpy()
+            outputs.append(output)
+        print(outputs)
+
+# to 2d
+        # outputs = np.empty(shape=[dataset_train.length//dataloader_train.batch_size, 1, 1000])
+        outputs = np.empty(shape=[0, 1, 1000])
+        model_loaded.eval()
+        for i, data in enumerate(dataloader_train):
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            data = data.to(device)
+            output = model_loaded.call_encoder(data).detach().cpu().numpy()
+            outputs = np.append(outputs, output, axis=0)
+        print(outputs.shape)
+
+# to 3d
+        dataset_train = AutoencoderDataset(outputs)
         dataloader_train = torch.utils.data.DataLoader(
             dataset_train, batch_size=128, shuffle=True, pin_memory=True
         )
+        outputs = np.empty(shape=[0, 12, 1000])
+        model_loaded.eval()
+        for i, data in enumerate(dataloader_train):
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            data = data.to(device)
+            output = model_loaded.call_decoder(data).detach().cpu().numpy()
+            outputs = np.append(outputs, output, axis=0)
+        print(outputs.shape)
 
-        dataloader_test = torch.utils.data.DataLoader(
-            dataset_test, batch_size=32, shuffle=False
-        )
+        # X_3d_forward = model_loaded(dataloader_train)
 
-        autoencoder = buil_compile_fit_ECG_NN(dataloader_train, dataset_train, dataloader_test, dataset_test)
-        X_2d = autoencoder.call(X)
+        # self._waves_train
+
+        # X_2d = model_loaded.call_encoder(dataset_train)
+        #
+        # X_3d = model_loaded.call_decoder(X_2d)
+        # print("self._waves_train:", self._waves_train)
+        # print("X_3d:", X_3d)
 
         X_resampled, y_resampled = method.fit_resample(X_2d, y)
         print(self.counter_dict_class(y_resampled))
@@ -204,10 +262,6 @@ def one_label_preparing(probs, counter):
             residuary_prob = prob
 
     return residuary_prob
-
-# def create_fit_balanced_mlbs(tabular: pd.DataFrame) ->
-
-
 
 # def ratio_multiplier(y):
 #     from collections import Counter

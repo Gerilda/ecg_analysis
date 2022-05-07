@@ -12,7 +12,6 @@ from torch.utils.data import Dataset
 class AutoencoderDataset(Dataset):
     """Implement dataset for autoencoder 3d to 2d"""
     X: np.ndarray
-    y: np.ndarray
     idx: int
     length: int
 
@@ -20,20 +19,12 @@ class AutoencoderDataset(Dataset):
     def __init__(
             self,
             X: np.ndarray,
-            y: np.ndarray,
     ) -> None:
         """Create dataset from user X and y"""
 
-        X_len, y_len = len(X), len(y)
-
-        if X_len != y_len:
-            raise ValueError(
-                f"Length of X and y must be the same,"
-                f"but it's {X_len}, {y_len} respectively"
-            )
+        X_len = len(X)
 
         self.X = X
-        self.y = y
         self.length = X_len
         # self.transform = transform
         # self.target_transform = target_transform
@@ -42,12 +33,7 @@ class AutoencoderDataset(Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        # return self.X[idx], self.y[idx]
-
-        return (
-            torch.tensor(self.X[idx], dtype=torch.float32),
-            torch.tensor(self.y[idx], dtype=torch.float32)
-        )
+        return torch.tensor(self.X[idx], dtype=torch.float32)
 
 
 # https://colab.research.google.com/drive/1krRZ-VVfpXUsHk3JFCjBtYUiUOwL8vW0?usp=sharing#scrollTo=TBuoZ1PgK01f
@@ -116,7 +102,9 @@ class EarlyStopping():
             self.counter = 0
         elif self.best_loss - val_loss < self.min_delta:
             self.counter += 1
+            print()
             print(f"INFO: Early stopping counter {self.counter} of {self.patience}")
             if self.counter >= self.patience:
+                print()
                 print('INFO: Early stopping')
                 self.early_stop = True
