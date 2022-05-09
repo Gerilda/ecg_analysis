@@ -300,9 +300,9 @@ class ResidualConvNetMixed(Encoder):
             kernels_sizes: list[int],
             dropout_probs: list[float],
             linear_layers_sizes_1: list[int],
-            linear_layers_sizes_2: list[int],
+            # linear_layers_sizes_2: list[int],
             num_superclasses: int,
-            num_classes: int,
+            # num_classes: int,
             outer_dropout_prob: float = 0.3,
             activation: activation_funcs = "relu",
     ) -> None:
@@ -331,28 +331,29 @@ class ResidualConvNetMixed(Encoder):
             nn.Sigmoid()
         )
 
-        linear_layers_sizes_2 = (
-            [self.last_out_channels + num_superclasses] + linear_layers_sizes_2
-        )
-        in_sizes_2 = [sizes for sizes in linear_layers_sizes_2[:-1]]
-        out_sizes_2 = [sizes for sizes in linear_layers_sizes_2[1:]]
-
-        lin_blocks_2: list[nn.Module] = []
-
-        for in_size, out_size in zip(in_sizes_2, out_sizes_2):
-            lin_blocks_2.append(lin_block(in_size, out_size))
-            lin_blocks_2.append(activation_func(self.activation))
-
-        lin_blocks_2.append(lin_block(out_sizes_2[-1], num_classes))
-
-        self.decoder_2 = nn.Sequential(
-            *lin_blocks_2,
-            nn.Sigmoid()
-        )
+        # linear_layers_sizes_2 = (
+        #     [self.last_out_channels + num_superclasses] + linear_layers_sizes_2
+        # )
+        # in_sizes_2 = [sizes for sizes in linear_layers_sizes_2[:-1]]
+        # out_sizes_2 = [sizes for sizes in linear_layers_sizes_2[1:]]
+        #
+        # lin_blocks_2: list[nn.Module] = []
+        #
+        # for in_size, out_size in zip(in_sizes_2, out_sizes_2):
+        #     lin_blocks_2.append(lin_block(in_size, out_size))
+        #     lin_blocks_2.append(activation_func(self.activation))
+        #
+        # lin_blocks_2.append(lin_block(out_sizes_2[-1], num_classes))
+        #
+        # self.decoder_2 = nn.Sequential(
+        #     *lin_blocks_2,
+        #     nn.Sigmoid()
+        # )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         embeddings = super().forward(x)
         superclasses = self.decoder_1(embeddings)
-        classes = self.decoder_2(torch.cat((embeddings, superclasses), 1))
+        # classes = self.decoder_2(torch.cat((embeddings, superclasses), 1))
 
-        return torch.cat((classes, superclasses), 1)
+        # return torch.cat((classes, superclasses), 1)
+        return superclasses

@@ -31,6 +31,11 @@ from balanced.autoencoder import ECG_NN, buil_compile_fit_ECG_NN
 from balanced.autoencoder_dataset import AutoencoderDataset
 
 
+from ecg_analysis.dataset import PtbXlClassesSuperclasses
+
+from balanced.balanced_classification import balanced_classification
+
+
 class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
     def __init__(
             self,
@@ -81,28 +86,45 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         # print("array[]", np.expand_dims(self.y_balance_class.to_numpy(), axis=0))
 
         # энкодим стринги классов в 0, 1, 2, ... для y: all, train и test
-        self.y_balanced_encoded_all = y_encoding(self.y_balance_class)
-        self.y_balanced_encoded_train = y_encoding(self.y_balance_train)
-        self.y_balanced_encoded_test = y_encoding(self.y_balance_test)
+        # self.y_balanced_encoded_all = y_encoding(self.y_balance_class)
+        # self.y_balanced_encoded_train = y_encoding(self.y_balance_train)
+        # self.y_balanced_encoded_test = y_encoding(self.y_balance_test)
+
+        # self.y_balanced_encoded_all = self.prepare_labels_balance(tabular)
+        # self.y_balanced_encoded_train = self.prepare_labels_balance(self.y_balance_train)
+        # self.y_balanced_encoded_test = self.prepare_labels_balance(self.y_balance_test)
+
+        self.y_balanced_label = self.prepare_labels_balance(tabular)
+
 
     @property
     def y_balance_train(self) -> np.ndarray:
-        return self.y_balance_class[self.labels_indices_train]
+        return self.y_balanced_label[self.labels_indices_train]
+
+    @property
+    def y_balance_val(self) -> np.ndarray:
+        return self.y_balanced_label[self.labels_indices_val]
 
     @property
     def y_balance_test(self) -> np.ndarray:
-        return self.y_balance_class[self.labels_indices_test]
+        return self.y_balanced_label[self.labels_indices_test]
 
-    def make_balanced_train_dataloader(self) -> DataLoader:
+    def make_balanced_train_dataloader(self, x_resampled, y_resampled) -> DataLoader:
         return DataLoader(
-            PtbXl(self._waves_train, self.y_train),
-            batch_size=self.balanced_batch_size
+            PtbXl(x_resampled, y_resampled),
+            batch_size=self.batch_size
+        )
+
+    def make_balanced_val_dataloader(self) -> DataLoader:
+        return DataLoader(
+            PtbXl(self._waves_val, self.y_balance_val),
+            batch_size=self.batch_size
         )
 
     def make_balanced_test_dataloader(self) -> DataLoader:
         return DataLoader(
-            PtbXl(self._waves_test, self.y_test),
-            batch_size=self.balanced_batch_size
+            PtbXl(self._waves_test, self.y_balance_test),
+            batch_size=self.batch_size
         )
 
     # def balanced_by_RandomOverSampler(self):
@@ -119,22 +141,41 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
 
     def balanced_by_imbalanced_learn_method(self, method):
         print("Balansed by: ", method)
-        # self._waves_train.take(axis=1)
-        X_resampled = self._waves_train
         print(self._waves_train.shape)
 
         y = self.y_balance_train
-        # y = y_balanced_encoded_train
+
+        x, _ = method.fit_resample(self._waves_train[:, 1], y)
+        X_resampled = np.empty(shape=[x.shape[0], 0, 1000])
 
         for i in range(12):
             X = self._waves_train[:, i]
 
             X_resampled_i, y_resampled = method.fit_resample(X, y)
-            print(self.counter_dict_class(y_resampled))
+            X_resampled_i = np.expand_dims(X_resampled_i, axis=1)
+            X_resampled = np.append(X_resampled, X_resampled_i, axis=1)
+
+            y_resampled_inv_trans = self.superclasses_mlb.inverse_transform(y_resampled)
+            # для картинки
+            print(self.counter_dict_class(y_resampled_inv_trans))
             print(X_resampled_i.shape)
-            # new = np.zeros()
 
         print(X_resampled_i)
+        return X_resampled, y_resampled
+
+
+    def balanced_by_imbalanced_learn_method_with_reshape(self, method):
+        print("Balansed by: ", method)
+
+        X = self._waves_train
+        y = self.y_balance_train
+
+        X_2d = np.reshape(X, (-1, 12000))
+
+        X_resampled_2d, y_resampled = method.fit_resample(X_2d, y)
+
+        X_resampled = np.reshape(X_resampled_2d, (-1, 12, 1000))
+
         return X_resampled, y_resampled
 
     def balanced_by_imbalanced_learn_method_witn_autoencoder(self, method):
@@ -185,17 +226,17 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
 
 # to 2d
         # outputs = np.empty(shape=[dataset_train.length//dataloader_train.batch_size, 1, 1000])
-        outputs = np.empty(shape=[0, 1, 1000])
+        X_2d = np.empty(shape=[0, 1, 1000])
         model_loaded.eval()
         for i, data in enumerate(dataloader_train):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             data = data.to(device)
             output = model_loaded.call_encoder(data).detach().cpu().numpy()
-            outputs = np.append(outputs, output, axis=0)
-        print(outputs.shape)
+            X_2d = np.append(X_2d, output, axis=0)
+        print(X_2d.shape)
 
 # to 3d
-        dataset_train = AutoencoderDataset(outputs)
+        dataset_train = AutoencoderDataset(X_2d)
         dataloader_train = torch.utils.data.DataLoader(
             dataset_train, batch_size=128, shuffle=True, pin_memory=True
         )
@@ -237,6 +278,10 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         # ax.set_xticklabels(ax.get_xticklabels(), rotation=90);
         return Counter(all_labels)
 
+    def prepare_labels_balance(self, tabular: pd.DataFrame) -> np.ndarray:
+        labels = self.superclasses_mlb.transform(tabular["y_balance"].to_numpy())
+        return labels
+
 
 # мб стоит изменить имя на prepare_labels_balance
 def y_encoding(y) -> np.ndarray:
@@ -261,7 +306,9 @@ def one_label_preparing(probs, counter):
             tmp = current
             residuary_prob = prob
 
-    return residuary_prob
+    tmp = (residuary_prob,)
+
+    return tmp
 
 # def ratio_multiplier(y):
 #     from collections import Counter
@@ -296,8 +343,9 @@ def main():
         balanced_batch_size=128
     )
 
-    X_resampled, y_resampled = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
-    # dataset.balanced_by_imbalanced_learn_method(SMOTE())
+    # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
+    # X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(SMOTE())
+    X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method_with_reshape(SMOTE())
     #
     # dataset.balanced_by_imbalanced_learn_method(RandomUnderSampler(random_state=0))
     #
@@ -305,7 +353,7 @@ def main():
     # # dataset.balanced_by_imbalanced_learn_method(ClusterCentroids(random_state=0)) # looooong time
     # print("--- %s seconds ---" % (datetime.now() - start_time))
     # эту запускаю для энкодировщика
-    dataset.balanced_by_imbalanced_learn_method_witn_autoencoder(EditedNearestNeighbours())# need parameters
+    # dataset.balanced_by_imbalanced_learn_method_witn_autoencoder(EditedNearestNeighbours())# need parameters
     # dataset.balanced_by_imbalanced_learn_method(RepeatedEditedNearestNeighbours())# need parameters
     # start_time = datetime.now()
     # # dataset.balanced_by_imbalanced_learn_method(CondensedNearestNeighbour(random_state=0))# looooong time
@@ -321,18 +369,9 @@ def main():
     # dataset.balanced_by_imbalanced_learn_method(SMOTETomek(random_state=0))
     # dataset.balanced_by_imbalanced_learn_method(TomekLinks())
 
-    print(X_resampled)
-    print(y_resampled)
 
-    train_dl = DataLoader(
-        PtbXl(X_resampled, y_resampled),
-        batch_size=dataset.batch_size)
-
-
-    # Create the data loaders
-    # train_dl = dataset.make_train_dataloader()
-    # test_dl = dataset.make_test_dataloader()
-    # val_dl = dataset.make_val_dataloader()
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros)
+    balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE')
 
 
 if __name__ == "__main__":
