@@ -83,17 +83,6 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         self.y_balance_class = tabular["y_balance"]
         print("y_balance_class_counter", self.counter_dict_class(self.y_balance_class))
 
-        # print("array[]", np.expand_dims(self.y_balance_class.to_numpy(), axis=0))
-
-        # энкодим стринги классов в 0, 1, 2, ... для y: all, train и test
-        # self.y_balanced_encoded_all = y_encoding(self.y_balance_class)
-        # self.y_balanced_encoded_train = y_encoding(self.y_balance_train)
-        # self.y_balanced_encoded_test = y_encoding(self.y_balance_test)
-
-        # self.y_balanced_encoded_all = self.prepare_labels_balance(tabular)
-        # self.y_balanced_encoded_train = self.prepare_labels_balance(self.y_balance_train)
-        # self.y_balanced_encoded_test = self.prepare_labels_balance(self.y_balance_test)
-
         self.y_balanced_label = self.prepare_labels_balance(tabular)
 
 
@@ -162,7 +151,6 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
 
         print(X_resampled_i)
         return X_resampled, y_resampled
-
 
     def balanced_by_imbalanced_learn_method_with_reshape(self, method):
         print("Balansed by: ", method)
@@ -343,35 +331,46 @@ def main():
         balanced_batch_size=128
     )
 
-    # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
+    X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
     # X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(SMOTE())
     X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method_with_reshape(SMOTE())
     #
-    # dataset.balanced_by_imbalanced_learn_method(RandomUnderSampler(random_state=0))
+    X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method_with_reshape(RandomUnderSampler(random_state=0))
     #
-    # start_time = datetime.now()
-    # # dataset.balanced_by_imbalanced_learn_method(ClusterCentroids(random_state=0)) # looooong time
-    # print("--- %s seconds ---" % (datetime.now() - start_time))
+    start_time = datetime.now()
+    X_resampled_cc, y_resampled_cc = dataset.balanced_by_imbalanced_learn_method_with_reshape(ClusterCentroids(random_state=0)) # looooong time
+    print("--- %s seconds ---" % (datetime.now() - start_time))
     # эту запускаю для энкодировщика
-    # dataset.balanced_by_imbalanced_learn_method_witn_autoencoder(EditedNearestNeighbours())# need parameters
-    # dataset.balanced_by_imbalanced_learn_method(RepeatedEditedNearestNeighbours())# need parameters
-    # start_time = datetime.now()
-    # # dataset.balanced_by_imbalanced_learn_method(CondensedNearestNeighbour(random_state=0))# looooong time
-    # print("--- %s seconds ---" % (datetime.now() - start_time))
-    # dataset.balanced_by_imbalanced_learn_method(OneSidedSelection(random_state=0))# need parameters
-    # # dataset.balanced_by_imbalanced_learn_method(NeighbourhoodCleaningRule())# TypeError: bad operand type for unary ~: 'str'
-    # # dataset.balanced_by_imbalanced_learn_method(InstanceHardnessThreshold(random_state=0,
-    # #                                                                       estimator=LogisticRegression(
-    # #                                                                                 solver='lbfgs',
-    # #                                                                                 multi_class='auto')
-    # #                                                                       ))# IndexError: arrays used as indices must be of integer (or boolean) type
-    # dataset.balanced_by_imbalanced_learn_method(SMOTEENN(random_state=0))# need parameters
-    # dataset.balanced_by_imbalanced_learn_method(SMOTETomek(random_state=0))
-    # dataset.balanced_by_imbalanced_learn_method(TomekLinks())
+    X_resampled_enn, y_resampled_enn = dataset.balanced_by_imbalanced_learn_method_with_reshape(EditedNearestNeighbours())# need parameters
+    X_resampled_renn, y_resampled_renn = dataset.balanced_by_imbalanced_learn_method_with_reshape(RepeatedEditedNearestNeighbours())# need parameters
+    start_time = datetime.now()
+    X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method_with_reshape(CondensedNearestNeighbour(random_state=0))# looooong time
+    print("--- %s seconds ---" % (datetime.now() - start_time))
+    X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method_with_reshape(OneSidedSelection(random_state=0))# need parameters
+    X_resampled_ncr, y_resampled_ncr = dataset.balanced_by_imbalanced_learn_method_with_reshape(NeighbourhoodCleaningRule())# TypeError: bad operand type for unary ~: 'str'
+    X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method_with_reshape(InstanceHardnessThreshold(random_state=0,
+                                                                          estimator=LogisticRegression(
+                                                                                    solver='lbfgs',
+                                                                                    multi_class='auto')
+                                                                          ))# IndexError: arrays used as indices must be of integer (or boolean) type
+    X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method_with_reshape(SMOTEENN(random_state=0))# need parameters
+    X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method_with_reshape(SMOTETomek(random_state=0))
+    X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method_with_reshape(TomekLinks())
 
 
-    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros)
+    balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler')
     balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE')
+    balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler')
+    balanced_classification(dataset, X_resampled_cc, y_resampled_cc, 'ClusterCentroids')
+    balanced_classification(dataset, X_resampled_enn, y_resampled_enn, 'EditedNearestNeighbours')
+    balanced_classification(dataset, X_resampled_renn, y_resampled_renn, 'RepeatedEditedNearestNeighbours')
+    balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour')
+    balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection')
+    balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr, 'NeighbourhoodCleaningRule')
+    balanced_classification(dataset, X_resampled_iht, y_resampled_iht, 'InstanceHardnessThreshold')
+    balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN')
+    balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek')
+    balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks')
 
 
 if __name__ == "__main__":
