@@ -1,7 +1,6 @@
 import os
 import ast
 import sys
-from typing import Optional
 
 #import seaborn as sns
 from functools import partial
@@ -23,8 +22,7 @@ from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids, Edited
 from imblearn.combine import SMOTEENN, SMOTETomek
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.model_selection import train_test_split
+
 from sklearn.preprocessing import LabelEncoder
 
 from balanced.autoencoder import ECG_NN, buil_compile_fit_ECG_NN
@@ -67,20 +65,23 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         )
 
         tabular = pd.read_csv(os.path.join(processed_data_folder, tabular_filename))
-        tabular["y_balance"] = tabular["superclass"].apply(ast.literal_eval)
+        tabular["superclass_one_label"] = tabular["superclass"].apply(ast.literal_eval)
 
-        self.counter = self.counter_dict_class(tabular["y_balance"])
+        # для картинки
+        self.counter = self.counter_dict_class(tabular["superclass_one_label"])
 
         one_label_preparing_counter = partial(one_label_preparing, counter=self.counter)
-        tabular["y_balance"] = tabular["y_balance"].apply(one_label_preparing_counter)
+        tabular["superclass_one_label"] = tabular["superclass_one_label"].apply(one_label_preparing_counter)
 
-        self.counter = self.counter_dict_class(tabular["y_balance"])
+        # для картинки
+        self.counter = self.counter_dict_class(tabular["superclass_one_label"])
 
         # Save processed tabular data
         os.makedirs(processed_data_folder, exist_ok=True)
         tabular.to_csv(os.path.join(processed_data_folder, tabular_filename))
 
-        self.y_balance_class = tabular["y_balance"]
+        self.y_balance_class = tabular["superclass_one_label"]
+
         print("y_balance_class_counter", self.counter_dict_class(self.y_balance_class))
 
         self.y_balanced_label = self.prepare_labels_balance(tabular)
@@ -128,32 +129,33 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
     #
     #     return X_resampled_NaiveRandom, y_resampled_NaiveRandom
 
+    # Old version balancing
+
+    # def balanced_by_imbalanced_learn_method(self, method):
+    #     print("Balansed by: ", method)
+    #     # print(self._waves_train.shape)
+    #
+    #     y = self.y_balance_train
+    #
+    #     x, _ = method.fit_resample(self._waves_train[:, 1], y)
+    #     X_resampled = np.empty(shape=[x.shape[0], 0, 1000])
+    #
+    #     for i in range(12):
+    #         X = self._waves_train[:, i]
+    #
+    #         X_resampled_i, y_resampled = method.fit_resample(X, y)
+    #         X_resampled_i = np.expand_dims(X_resampled_i, axis=1)
+    #         X_resampled = np.append(X_resampled, X_resampled_i, axis=1)
+    #
+    #     # для картинки
+    #     # y_resampled_inv_trans = self.superclasses_mlb.inverse_transform(y_resampled)
+    #     # print(self.counter_dict_class(y_resampled_inv_trans))
+    #
+    #     return X_resampled, y_resampled
+
     def balanced_by_imbalanced_learn_method(self, method):
         print("Balansed by: ", method)
-        print(self._waves_train.shape)
-
-        y = self.y_balance_train
-
-        x, _ = method.fit_resample(self._waves_train[:, 1], y)
-        X_resampled = np.empty(shape=[x.shape[0], 0, 1000])
-
-        for i in range(12):
-            X = self._waves_train[:, i]
-
-            X_resampled_i, y_resampled = method.fit_resample(X, y)
-            X_resampled_i = np.expand_dims(X_resampled_i, axis=1)
-            X_resampled = np.append(X_resampled, X_resampled_i, axis=1)
-
-            y_resampled_inv_trans = self.superclasses_mlb.inverse_transform(y_resampled)
-            # для картинки
-            print(self.counter_dict_class(y_resampled_inv_trans))
-            print(X_resampled_i.shape)
-
-        print(X_resampled_i)
-        return X_resampled, y_resampled
-
-    def balanced_by_imbalanced_learn_method_with_reshape(self, method):
-        print("Balansed by: ", method)
+        print("Start shape X_train", self._waves_train.shape)
 
         X = self._waves_train
         y = self.y_balance_train
@@ -163,6 +165,10 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         X_resampled_2d, y_resampled = method.fit_resample(X_2d, y)
 
         X_resampled = np.reshape(X_resampled_2d, (-1, 12, 1000))
+
+        # для картинки
+        y_resampled_inv_trans = self.superclasses_mlb.inverse_transform(y_resampled)
+        print("End balancing: ", self.counter_dict_class(y_resampled_inv_trans))
 
         return X_resampled, y_resampled
 
@@ -267,7 +273,7 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         return Counter(all_labels)
 
     def prepare_labels_balance(self, tabular: pd.DataFrame) -> np.ndarray:
-        labels = self.superclasses_mlb.transform(tabular["y_balance"].to_numpy())
+        labels = self.superclasses_mlb.transform(tabular["superclass_one_label"].to_numpy())
         return labels
 
 
@@ -308,6 +314,7 @@ def one_label_preparing(probs, counter):
 #             target_stats[key] = int(value * multiplier[key])
 #     return target_stats
 
+
 def ratio_multiplier(y):
     target_stats = Counter(y)
     for key, value in target_stats.items():
@@ -317,8 +324,8 @@ def ratio_multiplier(y):
 
 def main():
     dataset = PtbXlClassesSuperclassesBalanced(
-        r"/Users/gerilda/Documents/itmm/ecg_analysis/data/raw",
-        r"/Users/gerilda/Documents/itmm/ecg_analysis/data/processed",
+        r"C:\Anastasia\ecg_analysis\data\raw",
+        r"C:\Anastasia\ecg_analysis\data\processed",
         "ptbxl_database.csv",
         "scp_statements.csv",
         "classes_mlb.pkl",
@@ -331,32 +338,27 @@ def main():
         balanced_batch_size=128
     )
 
-    X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
-    # X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(SMOTE())
-    X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method_with_reshape(SMOTE())
-    #
-    X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method_with_reshape(RandomUnderSampler(random_state=0))
-    #
-    start_time = datetime.now()
-    X_resampled_cc, y_resampled_cc = dataset.balanced_by_imbalanced_learn_method_with_reshape(ClusterCentroids(random_state=0)) # looooong time
-    print("--- %s seconds ---" % (datetime.now() - start_time))
-    # эту запускаю для энкодировщика
-    X_resampled_enn, y_resampled_enn = dataset.balanced_by_imbalanced_learn_method_with_reshape(EditedNearestNeighbours())# need parameters
-    X_resampled_renn, y_resampled_renn = dataset.balanced_by_imbalanced_learn_method_with_reshape(RepeatedEditedNearestNeighbours())# need parameters
-    start_time = datetime.now()
-    X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method_with_reshape(CondensedNearestNeighbour(random_state=0))# looooong time
-    print("--- %s seconds ---" % (datetime.now() - start_time))
-    X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method_with_reshape(OneSidedSelection(random_state=0))# need parameters
-    X_resampled_ncr, y_resampled_ncr = dataset.balanced_by_imbalanced_learn_method_with_reshape(NeighbourhoodCleaningRule())# TypeError: bad operand type for unary ~: 'str'
-    X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method_with_reshape(InstanceHardnessThreshold(random_state=0,
-                                                                          estimator=LogisticRegression(
-                                                                                    solver='lbfgs',
-                                                                                    multi_class='auto')
-                                                                          ))# IndexError: arrays used as indices must be of integer (or boolean) type
-    X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method_with_reshape(SMOTEENN(random_state=0))# need parameters
-    X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method_with_reshape(SMOTETomek(random_state=0))
-    X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method_with_reshape(TomekLinks())
+    balanced_classification(dataset, dataset._waves_train, dataset.y_balance_train, 'Without')
 
+    X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
+
+    X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(SMOTE())
+
+    X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method(RandomUnderSampler(random_state=0))
+
+    X_resampled_cc, y_resampled_cc = dataset.balanced_by_imbalanced_learn_method(ClusterCentroids(random_state=0)) # looooong time
+
+    X_resampled_enn, y_resampled_enn = dataset.balanced_by_imbalanced_learn_method(EditedNearestNeighbours())# need parameters
+    X_resampled_renn, y_resampled_renn = dataset.balanced_by_imbalanced_learn_method(RepeatedEditedNearestNeighbours())# need parameters
+
+    X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(CondensedNearestNeighbour(random_state=0))# looooong time
+
+    X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method(OneSidedSelection(random_state=0))# need parameters
+    X_resampled_ncr, y_resampled_ncr = dataset.balanced_by_imbalanced_learn_method(NeighbourhoodCleaningRule())
+    X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method(InstanceHardnessThreshold(random_state=0, estimator=LogisticRegression(solver='lbfgs', multi_class='auto')))
+    X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(SMOTEENN(random_state=0))# need parameters
+    X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(SMOTETomek(random_state=0))
+    X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method(TomekLinks())
 
     balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler')
     balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE')

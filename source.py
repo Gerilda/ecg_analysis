@@ -20,6 +20,7 @@ DATA_DIR = "data"
 # Hardware configuration
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"{DEVICE=}")
+print(torch.cuda.get_device_name(0))
 
 
 def main():
@@ -49,9 +50,7 @@ def main():
         [5, 5, 3, 3],
         [0.3 for __ in range(4)],
         [128],
-        [128],
-        5,
-        44
+        5
     ).to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 
@@ -75,7 +74,7 @@ def main():
         # Compute Average Epoch Metrics
         print(
             f"[Epoch: {epoch_id + 1}/{EPOCH_COUNT}]",
-            f"Test Accuracy: {test_runner.avg_accuracy: 0.4f}",
+            f"Val Accuracy: {val_runner.avg_accuracy: 0.4f}",
             f"Train Accuracy: {train_runner.avg_accuracy: 0.4f}",
             sep='/n',
             end='/n/n',
@@ -83,14 +82,16 @@ def main():
 
         # Reset the runners
         train_runner.reset()
-        test_runner.reset()
+        val_runner.reset()
+        # test_runner.reset()
 
         # Flush the tracker after every epoch for live updates
         tracker.flush()
 
     classes = (
-        list(dataset.classes_mlb.classes_)
-        + list(dataset.superclasses_mlb.classes_)
+        # list(dataset.classes_mlb.classes_)
+        # +
+        list(dataset.superclasses_mlb.classes_)
     )
 
     run_test(test_runner, tracker, classes)

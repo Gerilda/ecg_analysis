@@ -9,6 +9,7 @@ import torch
 from sklearn.preprocessing import MultiLabelBinarizer
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import DataLoader
+from collections import Counter
 
 from ecg_analysis.load_data import prepare_tabular_data, prepare_waves
 
@@ -94,7 +95,10 @@ class PtbXlWrapper(ABC):
         tabular["diagnose"] = tabular["diagnose"].apply(ast.literal_eval)
         tabular["superclass"] = tabular["superclass"].apply(ast.literal_eval)
 
+        # print(Counter(tabular["superclass"]))
+
         self.labels = self.prepare_labels(tabular)
+        # print(Counter(self.labels))
         self.labels_indices_train = tabular["strat_fold"] < 9
         self.labels_indices_val = tabular["strat_fold"] == 9
         self.labels_indices_test = tabular["strat_fold"] == 10
@@ -106,7 +110,7 @@ class PtbXlWrapper(ABC):
         )
 
     @property
-    def waves_val(self) -> np.ndarray:
+    def _waves_val(self) -> np.ndarray:
         return np.load(
             os.path.join(
                 self.processed_data_folder,
@@ -144,7 +148,7 @@ class PtbXlWrapper(ABC):
 
     def make_val_dataloader(self) -> DataLoader:
         return DataLoader(
-            PtbXl(self.waves_val, self.y_val),
+            PtbXl(self._waves_val, self.y_val),
             batch_size=self.batch_size
         )
 
@@ -218,10 +222,8 @@ class PtbXlClassesSuperclasses(PtbXlWrapper):
         )
 
     def prepare_labels(self, tabular: pd.DataFrame) -> np.ndarray:
-        return np.hstack((
-            self.classes_mlb.transform(tabular["diagnose"].to_numpy()),
-            self.superclasses_mlb.transform(tabular["superclass"].to_numpy())
-        ))
+        labels = self.superclasses_mlb.transform(tabular["superclass"].to_numpy())
+        return labels
 
 
 class PtbXl(Dataset):

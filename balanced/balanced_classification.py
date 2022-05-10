@@ -4,10 +4,10 @@ import torch
 
 from ecg_analysis.models import ResidualConvNetMixed
 from ecg_analysis.runner import Runner, run_epoch, run_test
-from balanced.balanced_tensorboard import BalancedTensorboardExperiment
+from ecg_analysis.tensorboard import TensorboardExperiment
 
 # Hyperparameters
-EPOCH_COUNT = 1
+EPOCH_COUNT = 6
 LR = 8e-4
 BATCH_SIZE = 128
 LOG_PATH = "./balanced_runs"
@@ -41,7 +41,7 @@ def balanced_classification(dataset, X_resampled, y_resampled, method):
     val_runner = Runner(val_dl, model, device=DEVICE)
 
     # Setup the experiment tracker
-    tracker = BalancedTensorboardExperiment(LOG_PATH, method)
+    tracker = TensorboardExperiment(LOG_PATH, method)
 
     # Run the epochs
     for epoch_id in range(EPOCH_COUNT):

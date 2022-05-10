@@ -91,6 +91,7 @@ def prepare_tabular_data(
     # Read datasets
     ptbxl = pd.read_csv(database_path, index_col="ecg_id")
     scp_statements = pd.read_csv(scp_statements_path, index_col=0)
+    print(type(ptbxl.scp_codes))
 
     # Convert dict string to dict object
     ptbxl.scp_codes = ptbxl.scp_codes.apply(ast.literal_eval)
