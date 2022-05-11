@@ -2,7 +2,7 @@ import os
 import ast
 import sys
 
-#import seaborn as sns
+# import seaborn as sns
 from functools import partial
 from collections import Counter
 from datetime import datetime
@@ -15,10 +15,10 @@ import torch
 from torch.utils.data.dataloader import DataLoader
 
 from imblearn.over_sampling import RandomOverSampler, SMOTE
-from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids, EditedNearestNeighbours,\
-                                    RepeatedEditedNearestNeighbours, CondensedNearestNeighbour,\
-                                    OneSidedSelection, NeighbourhoodCleaningRule, InstanceHardnessThreshold,\
-                                    TomekLinks
+from imblearn.under_sampling import RandomUnderSampler, ClusterCentroids, EditedNearestNeighbours, \
+    RepeatedEditedNearestNeighbours, AllKNN, CondensedNearestNeighbour, \
+    OneSidedSelection, NeighbourhoodCleaningRule, InstanceHardnessThreshold, \
+    TomekLinks
 from imblearn.combine import SMOTEENN, SMOTETomek
 
 from sklearn.linear_model import LogisticRegression
@@ -28,10 +28,9 @@ from sklearn.preprocessing import LabelEncoder
 from balanced.autoencoder import ECG_NN, buil_compile_fit_ECG_NN
 from balanced.autoencoder_dataset import AutoencoderDataset
 
-
 from ecg_analysis.dataset import PtbXlClassesSuperclasses
 
-from balanced.balanced_classification import balanced_classification
+import matplotlib.pyplot as plt
 
 
 class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
@@ -85,7 +84,6 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         print("y_balance_class_counter", self.counter_dict_class(self.y_balance_class))
 
         self.y_balanced_label = self.prepare_labels_balance(tabular)
-
 
     @property
     def y_balance_train(self) -> np.ndarray:
@@ -155,20 +153,59 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
 
     def balanced_by_imbalanced_learn_method(self, method):
         print("Balansed by: ", method)
-        print("Start shape X_train", self._waves_train.shape)
+        if not (
+                os.path.exists(os.path.join(
+                    r"C:\Anastasia\ecg_analysis\data/processed\x_resampled", f"{str(method)}.npy")
+                )
+                and os.path.exists(os.path.join(
+            r"C:\Anastasia\ecg_analysis\data\processed\y_resampled", f"{str(method)}.npy")
+        )
+        ):
+            X = self._waves_train
+            y = self.y_balance_train
 
-        X = self._waves_train
-        y = self.y_balance_train
+            X_2d = np.reshape(X, (-1, 12000))
 
-        X_2d = np.reshape(X, (-1, 12000))
+            X_resampled_2d, y_resampled = method.fit_resample(X_2d, y)
 
-        X_resampled_2d, y_resampled = method.fit_resample(X_2d, y)
+            X_resampled = np.reshape(X_resampled_2d, (-1, 12, 1000))
 
-        X_resampled = np.reshape(X_resampled_2d, (-1, 12, 1000))
+            np.save(os.path.join(r"C:\Anastasia\ecg_analysis\data\processed\x_resampled", f"{str(method)}"),
+                    X_resampled)
+            np.save(os.path.join(r"C:\Anastasia\ecg_analysis\data\processed\y_resampled", f"{str(method)}"),
+                    y_resampled)
+
+        with open(os.path.join(
+                r"C:\Anastasia\ecg_analysis\data\processed\x_resampled", f"{str(method)}.npy"
+        ), "rb") as x_file:
+            X_resampled = np.load(x_file)
+
+        with open(os.path.join(
+                r"C:\Anastasia\ecg_analysis\data\processed\y_resampled", f"{str(method)}.npy"
+        ), "rb") as y_file:
+            y_resampled = np.load(y_file)
 
         # для картинки
+        
         y_resampled_inv_trans = self.superclasses_mlb.inverse_transform(y_resampled)
-        print("End balancing: ", self.counter_dict_class(y_resampled_inv_trans))
+        y_resampled_counter = self.counter_dict_class(y_resampled_inv_trans)
+        print("End balancing: ", y_resampled_counter)
+
+        # plt.bar(y_resampled_counter.keys(), y_resampled_counter.values())
+
+        cmap = plt.get_cmap('Spectral')
+        colors = [cmap(i) for i in np.linspace(0, 1, 5)]
+
+        plt.pie(y_resampled_counter.values(),
+                labels=y_resampled_counter.keys(),
+                autopct='%1.1f%%',
+                shadow=True,
+                colors=colors,
+                wedgeprops={"edgecolor": "black",
+                            'linewidth': 1,
+                            'antialiased': True}
+                )
+        plt.show()
 
         return X_resampled, y_resampled
 
@@ -176,7 +213,7 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
         print("Balansed by: ", method)
 
         y = self.y_balance_train
-# self.y_balanced_encoded_train
+        # self.y_balanced_encoded_train
         print(self._waves_train.shape)
 
         if not os.path.exists("model_autoencoder.pt"):
@@ -218,7 +255,7 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
             outputs.append(output)
         print(outputs)
 
-# to 2d
+        # to 2d
         # outputs = np.empty(shape=[dataset_train.length//dataloader_train.batch_size, 1, 1000])
         X_2d = np.empty(shape=[0, 1, 1000])
         model_loaded.eval()
@@ -229,7 +266,7 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
             X_2d = np.append(X_2d, output, axis=0)
         print(X_2d.shape)
 
-# to 3d
+        # to 3d
         dataset_train = AutoencoderDataset(X_2d)
         dataloader_train = torch.utils.data.DataLoader(
             dataset_train, batch_size=128, shuffle=True, pin_memory=True
@@ -304,6 +341,7 @@ def one_label_preparing(probs, counter):
 
     return tmp
 
+
 # def ratio_multiplier(y):
 #     from collections import Counter
 #
@@ -323,6 +361,8 @@ def ratio_multiplier(y):
 
 
 def main():
+    path_ecg_analysis = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     dataset = PtbXlClassesSuperclassesBalanced(
         r"C:\Anastasia\ecg_analysis\data\raw",
         r"C:\Anastasia\ecg_analysis\data\processed",
@@ -338,41 +378,57 @@ def main():
         balanced_batch_size=128
     )
 
-    balanced_classification(dataset, dataset._waves_train, dataset.y_balance_train, 'Without')
-
     X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(random_state=0))
 
     X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(SMOTE())
 
     X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method(RandomUnderSampler(random_state=0))
 
-    X_resampled_cc, y_resampled_cc = dataset.balanced_by_imbalanced_learn_method(ClusterCentroids(random_state=0)) # looooong time
+    # start_time = datetime.now()
+    X_resampled_cc, y_resampled_cc = dataset.balanced_by_imbalanced_learn_method(
+        ClusterCentroids(random_state=0))  # looooong time
+    # print("--- %s seconds ---" % (datetime.now() - start_time))
 
-    X_resampled_enn, y_resampled_enn = dataset.balanced_by_imbalanced_learn_method(EditedNearestNeighbours())# need parameters
-    X_resampled_renn, y_resampled_renn = dataset.balanced_by_imbalanced_learn_method(RepeatedEditedNearestNeighbours())# need parameters
+    X_resampled_enn, y_resampled_enn = dataset.balanced_by_imbalanced_learn_method(
+        EditedNearestNeighbours())  # need parameters
+    X_resampled_renn, y_resampled_renn = dataset.balanced_by_imbalanced_learn_method(
+        RepeatedEditedNearestNeighbours())  # need parameters
 
-    X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(CondensedNearestNeighbour(random_state=0))# looooong time
+    X_resampled_allknn, y_resampled_allknn = dataset.balanced_by_imbalanced_learn_method(
+        AllKNN(sampling_strategy='majority'))
 
-    X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method(OneSidedSelection(random_state=0))# need parameters
+    # start_time = datetime.now()
+    X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(
+        CondensedNearestNeighbour(random_state=0))  # looooong time
+    # print("--- %s seconds ---" % (datetime.now() - start_time))
+
+    X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method(
+        OneSidedSelection(random_state=0))  # need parameters
     X_resampled_ncr, y_resampled_ncr = dataset.balanced_by_imbalanced_learn_method(NeighbourhoodCleaningRule())
-    X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method(InstanceHardnessThreshold(random_state=0, estimator=LogisticRegression(solver='lbfgs', multi_class='auto')))
-    X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(SMOTEENN(random_state=0))# need parameters
-    X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(SMOTETomek(random_state=0))
+    X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method(
+        InstanceHardnessThreshold(random_state=0, estimator=LogisticRegression(solver='lbfgs', multi_class='auto')))
+    X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
+        SMOTEENN(random_state=0))  # need parameters
+    X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(
+        SMOTETomek(random_state=0))
     X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method(TomekLinks())
 
-    balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler')
-    balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE')
-    balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler')
-    balanced_classification(dataset, X_resampled_cc, y_resampled_cc, 'ClusterCentroids')
-    balanced_classification(dataset, X_resampled_enn, y_resampled_enn, 'EditedNearestNeighbours')
-    balanced_classification(dataset, X_resampled_renn, y_resampled_renn, 'RepeatedEditedNearestNeighbours')
-    balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour')
-    balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection')
-    balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr, 'NeighbourhoodCleaningRule')
-    balanced_classification(dataset, X_resampled_iht, y_resampled_iht, 'InstanceHardnessThreshold')
-    balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN')
-    balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek')
-    balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks')
+    # balanced_classification(dataset, dataset._waves_train, dataset.y_balance_train, 'Without')
+
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler')
+    # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE')
+    # balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler')
+    # balanced_classification(dataset, X_resampled_cc, y_resampled_cc, 'ClusterCentroids')
+    # balanced_classification(dataset, X_resampled_enn, y_resampled_enn, 'EditedNearestNeighbours')
+    # balanced_classification(dataset, X_resampled_renn, y_resampled_renn, 'RepeatedEditedNearestNeighbours')
+    # balanced_classification(dataset, X_resampled_allknn, y_resampled_allknn, 'AllKNN')
+    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour')
+    # balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection')
+    # balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr, 'NeighbourhoodCleaningRule')
+    # balanced_classification(dataset, X_resampled_iht, y_resampled_iht, 'InstanceHardnessThreshold')
+    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN')
+    # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek')
+    # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks')
 
 
 if __name__ == "__main__":

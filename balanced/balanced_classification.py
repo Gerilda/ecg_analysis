@@ -7,7 +7,7 @@ from ecg_analysis.runner import Runner, run_epoch, run_test
 from ecg_analysis.tensorboard import TensorboardExperiment
 
 # Hyperparameters
-EPOCH_COUNT = 6
+EPOCH_COUNT = 10
 LR = 8e-4
 BATCH_SIZE = 128
 LOG_PATH = "./balanced_runs"
