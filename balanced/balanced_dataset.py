@@ -186,7 +186,7 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
             y_resampled = np.load(y_file)
 
         # для картинки
-
+        
         y_resampled_inv_trans = self.superclasses_mlb.inverse_transform(y_resampled)
         y_resampled_counter = self.counter_dict_class(y_resampled_inv_trans)
         print("End balancing: ", y_resampled_counter)
