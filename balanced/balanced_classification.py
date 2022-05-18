@@ -7,7 +7,7 @@ from ecg_analysis.runner import Runner, run_epoch, run_test
 from ecg_analysis.tensorboard import TensorboardExperiment
 
 # Hyperparameters
-EPOCH_COUNT = 10
+# EPOCH_COUNT = 5
 LR = 8e-4
 BATCH_SIZE = 128
 LOG_PATH = "./balanced_runs"
@@ -17,7 +17,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # print(f"{DEVICE=}")
 
 
-def balanced_classification(dataset, X_resampled, y_resampled, method):
+def balanced_classification(dataset, X_resampled, y_resampled, method, EPOCH_COUNT):
 
     # Create the data loaders
     train_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
