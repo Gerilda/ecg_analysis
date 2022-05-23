@@ -560,22 +560,7 @@ def split_multilabels(labels_decoding):
 def main():
     path_ecg_analysis = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    dataset = PtbXlClassesSuperclassesBalanced(
-        path_ecg_analysis + r"/data/raw",
-        path_ecg_analysis + r"/data/processed",
-        "ptbxl_database.csv",
-        "scp_statements.csv",
-        "classes_mlb.pkl",
-        "superclasses_mlb.pkl",
-        "tabular.csv",
-        "waves",
-        threshold=100,
-        sampling_rate=100,
-        batch_size=64,
-        balanced_batch_size=128
-    )
-
-    # dataset = PtbXlClassesSuperclassesMultilabelBalanced(
+    # dataset = PtbXlClassesSuperclassesBalanced(
     #     path_ecg_analysis + r"/data/raw",
     #     path_ecg_analysis + r"/data/processed",
     #     "ptbxl_database.csv",
@@ -589,6 +574,21 @@ def main():
     #     batch_size=64,
     #     balanced_batch_size=128
     # )
+
+    dataset = PtbXlClassesSuperclassesMultilabelBalanced(
+        path_ecg_analysis + r"/data/raw",
+        path_ecg_analysis + r"/data/processed",
+        "ptbxl_database.csv",
+        "scp_statements.csv",
+        "classes_mlb.pkl",
+        "superclasses_mlb.pkl",
+        "tabular.csv",
+        "waves",
+        threshold=100,
+        sampling_rate=100,
+        batch_size=64,
+        balanced_batch_size=128
+    )
 
     # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(sampling_strategy='not majority'))
 

@@ -7,10 +7,10 @@ from ecg_analysis.runner import Runner, run_epoch, run_test
 from ecg_analysis.tensorboard import TensorboardExperiment
 
 # Hyperparameters
-# EPOCH_COUNT = 5
+# EPOCH_COUNT = 10
 LR = 8e-4
 BATCH_SIZE = 128
-LOG_PATH = "./balanced_runs"
+LOG_PATH = "balanced_runs_singlelabel_test"
 
 # Hardware configuration
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -21,8 +21,12 @@ def balanced_classification(dataset, X_resampled, y_resampled, method, EPOCH_COU
 
     # Create the data loaders
     train_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
-    test_dl = dataset.make_balanced_test_dataloader()
-    val_dl = dataset.make_balanced_val_dataloader()
+    # val_dl = dataset.make_balanced_val_dataloader()
+    # test_dl = dataset.make_balanced_test_dataloader()
+    # test_dl = dataset.make_balanced_val_dataloader()
+
+    val_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
+    test_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
 
     # Model and optimizer
     model = ResidualConvNetMixed(
