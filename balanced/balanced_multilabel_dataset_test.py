@@ -8,6 +8,7 @@ from collections import Counter
 from datetime import datetime
 
 from balanced.balanced_classification import balanced_classification
+from balanced.confusion_matrix_transformation import conf_matrix
 from ecg_analysis.dataset import PtbXlClassesSuperclasses, PtbXl
 
 import pandas as pd
@@ -208,7 +209,7 @@ class PtbXlClassesSuperclassesMultilabelBalanced(PtbXlClassesSuperclasses):
         ):
             # X = self._waves_train
             # y = self.y_train_multilabel
-            normalize
+
             X = self._waves_val
             y = self.y_val_multilabel
 
@@ -291,25 +292,25 @@ def main():
         balanced_batch_size=128
     )
 
-    # balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Without_multilabel', 10)
+    balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Imbalanced_multilabel', 10)
 
-    # over-sampling RandomOverSampler
+    # over-sampling RandomOverSampler_overfit
     # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(
-    #     RandomOverSampler(sampling_strategy='not majority'))
+    #     RandomOverSampler_overfit(sampling_strategy='not majority'))
     # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_multilabel', 10)
 
-    # SMOTE
-    smote_4 = SMOTE(sampling_strategy='not majority', k_neighbors=4)
-    X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(
-        SMOTE(sampling_strategy='not majority', k_neighbors=4))
-    balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 20)
+    # SMOTE_overfit
+    # smote_4 = SMOTE_overfit(sampling_strategy='not majority', k_neighbors=4)
+    # X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(
+    #     SMOTE_overfit(sampling_strategy='not majority', k_neighbors=4))
+    # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 20)
     #
     # X_resampled_adasyn3, y_resampled_adasyn3 = dataset.balanced_by_imbalanced_learn_method(
-    #     ADASYN(sampling_strategy='not majority', n_neighbors=3))
+    #     ADASYN_overfit(sampling_strategy='not majority', n_neighbors=3))
     # X_resampled_adasyn4, y_resampled_adasyn4 = dataset.balanced_by_imbalanced_learn_method(
-    #     ADASYN(sampling_strategy='not majority', n_neighbors=4))
+    #     ADASYN_overfit(sampling_strategy='not majority', n_neighbors=4))
     # X_resampled_adasyn5, y_resampled_adasyn5 = dataset.balanced_by_imbalanced_learn_method(
-    #     ADASYN(sampling_strategy='not majority', n_neighbors=5))
+    #     ADASYN_overfit(sampling_strategy='not majority', n_neighbors=5))
     # balanced_classification(dataset, X_resampled_adasyn3, y_resampled_adasyn3, 'SMOTE_3_neighbors', 20)
     # balanced_classification(dataset, X_resampled_adasyn4, y_resampled_adasyn4, 'SMOTE_4_neighbors', 20)
     # balanced_classification(dataset, X_resampled_adasyn5, y_resampled_adasyn5, 'SMOTE_5_neighbors', 20)
@@ -362,7 +363,7 @@ def main():
     # TomekLinks (over-sampling cleaning)
     # параметров у метода нет (majority не работает)
     # X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method(TomekLinks())
-    # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks_multilabel', 10)
+    # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks_multilabel', 25)
 
     # CondensedNearestNeighbour (over-sampling cleaning)
     # X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(
@@ -383,14 +384,21 @@ def main():
     # balanced_classification(dataset, X_resampled_iht, y_resampled_iht,
     #                         'InstanceHardnessThreshold_multilabel_LogisticRegression_cv_10', 10)
 
+    # X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method(
+    #     OneSidedSelection(sampling_strategy='not minority'))
+    # balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection_not minority_test', 23)
+    # balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection_not minority_test', 23)
+    # balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection_not minority_test', 24)
+    # balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection_not minority_test', 23)
+
     # combined method
-    # SMOTEENN
-    # X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
-    #     SMOTEENN(sampling_strategy='not minority', smote=smote_4, enn=enn_2_mode))
-    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel_smote_4_enn_2_mode', 10)
+    # SMOTEENN_overfit
+    X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
+        SMOTEENN(sampling_strategy='not minority', smote=smote_4, enn=enn_2_mode))
+    balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel_smote_4_enn_2_mode', 10)
     #
     # X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
-         # SMOTEENN())
+         # SMOTEENN_overfit())
     # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel', 10)
 
     # SMOTETomek
@@ -398,9 +406,9 @@ def main():
     #     SMOTETomek())
     # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel', 10)
 
-    # X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(
-    #     SMOTETomek(sampling_strategy='not minority', smote=smote_4, tomek=TomekLinks()))
-    # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel_smote_4', 10)
+    X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(
+        SMOTETomek(sampling_strategy='not minority', smote=smote_4, tomek=TomekLinks()))
+    balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel_smote_4', 10)
 
 
 if __name__ == "__main__":

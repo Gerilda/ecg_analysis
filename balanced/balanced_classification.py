@@ -21,12 +21,12 @@ def balanced_classification(dataset, X_resampled, y_resampled, method, EPOCH_COU
 
     # Create the data loaders
     train_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
-    # val_dl = dataset.make_balanced_val_dataloader()
-    # test_dl = dataset.make_balanced_test_dataloader()
+    val_dl = dataset.make_balanced_val_dataloader()
+    test_dl = dataset.make_balanced_test_dataloader()
     # test_dl = dataset.make_balanced_val_dataloader()
 
-    val_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
-    test_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
+    # val_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
+    # test_dl = dataset.make_balanced_train_dataloader(X_resampled, y_resampled)
 
     # Model and optimizer
     model = ResidualConvNetMixed(
@@ -75,7 +75,7 @@ def balanced_classification(dataset, X_resampled, y_resampled, method, EPOCH_COU
 
     classes = (list(dataset.superclasses_mlb.classes_))
 
-    run_test(test_runner, tracker, classes)
+    run_test(dataset, test_runner, tracker, classes)
 
     # Save model weights
     torch.save(model.state_dict(), os.path.join(tracker.log_dir, "model.pt"))

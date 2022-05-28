@@ -154,7 +154,7 @@ class PtbXlClassesSuperclassesBalanced(PtbXlClassesSuperclasses):
     #     y = self.y_balance
     #     print(counter_dict_class(y))
     #
-    #     ros = RandomOverSampler(random_state=0)
+    #     ros = RandomOverSampler_overfit(random_state=0)
     #     X_resampled_NaiveRandom, y_resampled_NaiveRandom = ros.fit_resample(X, y)
     #     print(counter_dict_class(y_resampled_NaiveRandom))
     #
@@ -590,11 +590,11 @@ def main():
         balanced_batch_size=128
     )
 
-    # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler(sampling_strategy='not majority'))
+    # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(RandomOverSampler_overfit(sampling_strategy='not majority'))
 
-    # SMOTE не работает для multilabel
+    # SMOTE_overfit не работает для multilabel
     # X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(
-    #     SMOTE(sampling_strategy='not majority', k_neighbors=4))
+    #     SMOTE_overfit(sampling_strategy='not majority', k_neighbors=4))
 
     # X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method(RandomUnderSampler())
     ## X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method(
@@ -662,14 +662,14 @@ def main():
     # X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method(
     #     InstanceHardnessThreshold(estimator=LogisticRegression(solver='lbfgs', multi_class='auto')))
     # X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
-    #     SMOTEENN())  # need parameters
+    #     SMOTEENN_overfit())  # need parameters
     # X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(
     #     SMOTETomek())
     # X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method(TomekLinks())
 
 # Выполнено
     # balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Without')
-    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler', 1)
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_overfit', 1)
 
 
     # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 1)
@@ -687,7 +687,7 @@ def main():
     # balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection')
     # balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr, 'NeighbourhoodCleaningRule')
     # balanced_classification(dataset, X_resampled_iht, y_resampled_iht, 'InstanceHardnessThreshold')
-    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN')
+    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_overfit')
     # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek')
     # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks')
 

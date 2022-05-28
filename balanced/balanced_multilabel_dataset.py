@@ -40,6 +40,20 @@ def counter_dict_class(tabular_column):
         all_labels = [label for label in tabular_column]
     return Counter(all_labels)
 
+def counter_dict_class_test(tabular_column):
+    """Creates the counter of classes in the tabular by column"""
+    # all_labels = []
+    # for samples in tabular_column:
+    #     if len(samples) == 1:
+    #         all_labels.append(samples[0])
+    #     else:
+    #         for class_ in samples:
+    #             all_labels.append(class_)
+    # tmp = Counter(all_labels)
+    all_labels = [label for labels in tabular_column for label in labels]
+
+    return Counter(all_labels)
+
 
 def one_label_preparing(probs, counter):
     residuary_prob = probs
@@ -138,10 +152,17 @@ class PtbXlClassesSuperclassesMultilabelBalanced(PtbXlClassesSuperclasses):
         print("Counter train after prepare multi-labels", counter)
         create_pie(counter, "Imblanced", "Multi-label", "subclasses", self.processed_data_folder)
 
+        #counter = counter_dict_class_test(tabular["multilabel_superclass"][self.labels_indices_test])
+        #create_pie(counter, "Test_data", "Multi-label", "subclasses", self.processed_data_folder)
+
         # not needed
         # y_train_split_multilabel = split_multilabels(tabular["multilabel_superclass"][self.labels_indices_train])
         # counter = counter_dict_class(y_train_split_multilabel)
         # create_pie(counter, "Imblanced", "Multi-label", "superclasses", self.processed_data_folder)
+        y_train_split_multilabel = split_multilabels(tabular["multilabel_superclass"][self.labels_indices_test])
+        counter = counter_dict_class_test(y_train_split_multilabel)
+        print("Counter superclasses test after prepare multi-labels", counter)
+        create_pie(counter, "Test_data", "Multi-label", "superclasses", self.processed_data_folder)
 
     def make_balanced_train_dataloader(self, x_resampled, y_resampled) -> DataLoader:
         return DataLoader(
@@ -273,198 +294,209 @@ def main():
     )
 
 
-    balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Without_multilabel', 10)
-    balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Without_multilabel', 10)
-    balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Without_multilabel', 9)
-    balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Without_multilabel', 9)
-    balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Without_multilabel', 9)
+    # balanced_classification(dataset, dataset._waves_train, dataset.y_train, 'Imbalanced_', 11)
 
-    # over-sampling RandomOverSampler
+    # over-sampling RandomOverSampler_overfit
 
     # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(
     #     RandomOverSampler(sampling_strategy='not majority'))
-    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_multilabel', 30)
-    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_multilabel', 30)
-    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_multilabel', 30)
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_overfit', 1)
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_overfit', 15)
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_overfit', 30)
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_overfit', 10)
     #
-    # # SMOTE
+    # X_resampled_ros, y_resampled_ros = dataset.balanced_by_imbalanced_learn_method(
+    #     RandomOverSampler_overfit(sampling_strategy='minority'))
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_minor', 10)
+    # balanced_classification(dataset, X_resampled_ros, y_resampled_ros, 'RandomOverSampler_minor', 15)
+
+    #
+    # # SMOTE_overfit
     # # train_test
-    smote_4 = SMOTE(sampling_strategy='not majority', k_neighbors=4)
-    X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(
-        SMOTE(sampling_strategy='not majority', k_neighbors=4))
-    balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 10)
+    # smote_4 = SMOTE_overfit(sampling_strategy='not majority', k_neighbors=4)
+    # X_resampled_smote, y_resampled_smote = dataset.balanced_by_imbalanced_learn_method(
+    #     SMOTE_overfit(sampling_strategy='not majority', k_neighbors=4))
     # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 10)
-    # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 10)
-    # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 10)
-
-    X_resampled_adasyn3, y_resampled_adasyn3 = dataset.balanced_by_imbalanced_learn_method(
-        ADASYN(sampling_strategy='not majority', n_neighbors=3))
-    X_resampled_adasyn4, y_resampled_adasyn4 = dataset.balanced_by_imbalanced_learn_method(
-        ADASYN(sampling_strategy='not majority', n_neighbors=4))
-    X_resampled_adasyn5, y_resampled_adasyn5 = dataset.balanced_by_imbalanced_learn_method(
-        ADASYN(sampling_strategy='not majority', n_neighbors=5))
-    balanced_classification(dataset, X_resampled_adasyn3, y_resampled_adasyn3, 'ADASYN_3_neighbors', 20)
-    balanced_classification(dataset, X_resampled_adasyn4, y_resampled_adasyn4, 'ADASYN_4_neighbors', 20)
-    balanced_classification(dataset, X_resampled_adasyn5, y_resampled_adasyn5, 'ADASYN_5_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 10)
+    # # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 10)
+    # # balanced_classification(dataset, X_resampled_smote, y_resampled_smote, 'SMOTE_4_neighbors', 10)
+    #
+    # X_resampled_adasyn3, y_resampled_adasyn3 = dataset.balanced_by_imbalanced_learn_method(
+    #     ADASYN_overfit(sampling_strategy='not majority', n_neighbors=3))
+    # X_resampled_adasyn4, y_resampled_adasyn4 = dataset.balanced_by_imbalanced_learn_method(
+    #     ADASYN_overfit(sampling_strategy='not majority', n_neighbors=4))
+    # X_resampled_adasyn5, y_resampled_adasyn5 = dataset.balanced_by_imbalanced_learn_method(
+    #     ADASYN_overfit(sampling_strategy='not majority', n_neighbors=5))
     # balanced_classification(dataset, X_resampled_adasyn3, y_resampled_adasyn3, 'ADASYN_3_neighbors', 20)
     # balanced_classification(dataset, X_resampled_adasyn4, y_resampled_adasyn4, 'ADASYN_4_neighbors', 20)
     # balanced_classification(dataset, X_resampled_adasyn5, y_resampled_adasyn5, 'ADASYN_5_neighbors', 20)
-    # balanced_classification(dataset, X_resampled_adasyn3, y_resampled_adasyn3, 'ADASYN_3_neighbors', 20)
-    # balanced_classification(dataset, X_resampled_adasyn4, y_resampled_adasyn4, 'ADASYN_4_neighbors', 20)
-    # balanced_classification(dataset, X_resampled_adasyn5, y_resampled_adasyn5, 'ADASYN_5_neighbors', 20)
-
-    # ---------------------------------------------------------------------------------------------------
-
-    # over-sampling controlled
-    # RandomUnderSampler
-    X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method(
-        RandomUnderSampler(sampling_strategy='not minority'))
-    balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_adasyn3, y_resampled_adasyn3, 'ADASYN_3_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_adasyn4, y_resampled_adasyn4, 'ADASYN_4_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_adasyn5, y_resampled_adasyn5, 'ADASYN_5_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_adasyn3, y_resampled_adasyn3, 'ADASYN_3_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_adasyn4, y_resampled_adasyn4, 'ADASYN_4_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_adasyn5, y_resampled_adasyn5, 'ADASYN_5_neighbors', 20)
+    #
+    # # ---------------------------------------------------------------------------------------------------
+    #
+    # # over-sampling controlled
+    # # RandomUnderSampler
+    # X_resampled_rus, y_resampled_rus = dataset.balanced_by_imbalanced_learn_method(
+    #     RandomUnderSampler(sampling_strategy='not minority'))
     # balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler_multilabel', 20)
-
-    # NearMiss
-    X_resampled_nm1, y_resampled_nm1 = dataset.balanced_by_imbalanced_learn_method(NearMiss(version=1))
-    X_resampled_nm2, y_resampled_nm2 = dataset.balanced_by_imbalanced_learn_method(NearMiss(version=2))
-    X_resampled_nm3, y_resampled_nm3 = dataset.balanced_by_imbalanced_learn_method(NearMiss(version=3))
-    X_resampled_nm3_neighbor, y_resampled_nm3_neighbor = dataset.balanced_by_imbalanced_learn_method(
-        NearMiss(version=3, n_neighbors_ver3=5))
-    balanced_classification(dataset, X_resampled_nm1, y_resampled_nm1, 'NearMiss-1_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_rus, y_resampled_rus, 'RandomUnderSampler_multilabel', 20)
+    #
+    # # NearMiss
+    # X_resampled_nm1, y_resampled_nm1 = dataset.balanced_by_imbalanced_learn_method(NearMiss(version=1))
+    # X_resampled_nm2, y_resampled_nm2 = dataset.balanced_by_imbalanced_learn_method(NearMiss(version=2))
+    # X_resampled_nm3, y_resampled_nm3 = dataset.balanced_by_imbalanced_learn_method(NearMiss(version=3))
+    # X_resampled_nm3_neighbor, y_resampled_nm3_neighbor = dataset.balanced_by_imbalanced_learn_method(
+    #     NearMiss(version=3, n_neighbors_ver3=5))
     # balanced_classification(dataset, X_resampled_nm1, y_resampled_nm1, 'NearMiss-1_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_nm1, y_resampled_nm1, 'NearMiss-1_multilabel', 20)
-    balanced_classification(dataset, X_resampled_nm2, y_resampled_nm2, 'NearMiss-2_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_nm1, y_resampled_nm1, 'NearMiss-1_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_nm1, y_resampled_nm1, 'NearMiss-1_multilabel', 20)
     # balanced_classification(dataset, X_resampled_nm2, y_resampled_nm2, 'NearMiss-2_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_nm2, y_resampled_nm2, 'NearMiss-2_multilabel', 20)
-    balanced_classification(dataset, X_resampled_nm3, y_resampled_nm3, 'NearMiss-3_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_nm2, y_resampled_nm2, 'NearMiss-2_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_nm2, y_resampled_nm2, 'NearMiss-2_multilabel', 20)
     # balanced_classification(dataset, X_resampled_nm3, y_resampled_nm3, 'NearMiss-3_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_nm3, y_resampled_nm3, 'NearMiss-3_multilabel', 20)
-    balanced_classification(dataset, X_resampled_nm3_neighbor, y_resampled_nm3_neighbor,
-                            'NearMiss-3__multilabel_n_neighbors_ver3=14', 20)
+    # # balanced_classification(dataset, X_resampled_nm3, y_resampled_nm3, 'NearMiss-3_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_nm3, y_resampled_nm3, 'NearMiss-3_multilabel', 20)
     # balanced_classification(dataset, X_resampled_nm3_neighbor, y_resampled_nm3_neighbor,
     #                         'NearMiss-3__multilabel_n_neighbors_ver3=14', 20)
-
-    # over-sampling cleaning
-    # EditedNearestNeighbours
-    enn_2_mode = EditedNearestNeighbours(n_neighbors=2, kind_sel='mode')
-    X_resampled_enn1, y_resampled_enn1 = dataset.balanced_by_imbalanced_learn_method(EditedNearestNeighbours(
-        n_neighbors=2, kind_sel='mode'))
-    balanced_classification(dataset, X_resampled_enn1, y_resampled_enn1,
-                            'EditedNearestNeighbours_multilabel_n_neighbors=2_kind_sel=mode', 20)
+    # # balanced_classification(dataset, X_resampled_nm3_neighbor, y_resampled_nm3_neighbor,
+    # #                         'NearMiss-3__multilabel_n_neighbors_ver3=14', 20)
+    #
+    # # over-sampling cleaning
+    # # EditedNearestNeighbours
+    # enn_2_mode = EditedNearestNeighbours(n_neighbors=2, kind_sel='mode')
+    # X_resampled_enn1, y_resampled_enn1 = dataset.balanced_by_imbalanced_learn_method(EditedNearestNeighbours(
+    #     n_neighbors=2, kind_sel='mode'))
     # balanced_classification(dataset, X_resampled_enn1, y_resampled_enn1,
     #                         'EditedNearestNeighbours_multilabel_n_neighbors=2_kind_sel=mode', 20)
-    # balanced_classification(dataset, X_resampled_enn1, y_resampled_enn1,
-    #                         'EditedNearestNeighbours_multilabel_n_neighbors=2_kind_sel=mode', 20)
-    enn_3_all = EditedNearestNeighbours(n_neighbors=3, kind_sel='all')
-    X_resampled_enn2, y_resampled_enn2 = dataset.balanced_by_imbalanced_learn_method(EditedNearestNeighbours(
-        n_neighbors=3, kind_sel='all'))
-    balanced_classification(dataset, X_resampled_enn2, y_resampled_enn2,
-                            'EditedNearestNeighbours_multilabel_n_neighbors=3_kind_sel=all', 20)
+    # # balanced_classification(dataset, X_resampled_enn1, y_resampled_enn1,
+    # #                         'EditedNearestNeighbours_multilabel_n_neighbors=2_kind_sel=mode', 20)
+    # # balanced_classification(dataset, X_resampled_enn1, y_resampled_enn1,
+    # #                         'EditedNearestNeighbours_multilabel_n_neighbors=2_kind_sel=mode', 20)
+    # enn_3_all = EditedNearestNeighbours(n_neighbors=3, kind_sel='all')
+    # X_resampled_enn2, y_resampled_enn2 = dataset.balanced_by_imbalanced_learn_method(EditedNearestNeighbours(
+    #     n_neighbors=3, kind_sel='all'))
     # balanced_classification(dataset, X_resampled_enn2, y_resampled_enn2,
     #                         'EditedNearestNeighbours_multilabel_n_neighbors=3_kind_sel=all', 20)
-    # balanced_classification(dataset, X_resampled_enn2, y_resampled_enn2,
-    #                         'EditedNearestNeighbours_multilabel_n_neighbors=3_kind_sel=all', 20)
-
-    # RepeatedEditedNearestNeighbours (over-sampling cleaning)
-    X_resampled_renn, y_resampled_renn = dataset.balanced_by_imbalanced_learn_method(
-        RepeatedEditedNearestNeighbours(
-            n_neighbors=5, kind_sel='all', max_iter=100))
-    balanced_classification(dataset, X_resampled_renn, y_resampled_renn,
-                            'RepeatedEditedNearestNeighbours_kind_sel=all_max_iter=100', 20)
+    # # balanced_classification(dataset, X_resampled_enn2, y_resampled_enn2,
+    # #                         'EditedNearestNeighbours_multilabel_n_neighbors=3_kind_sel=all', 20)
+    # # balanced_classification(dataset, X_resampled_enn2, y_resampled_enn2,
+    # #                         'EditedNearestNeighbours_multilabel_n_neighbors=3_kind_sel=all', 20)
+    #
+    # # RepeatedEditedNearestNeighbours (over-sampling cleaning)
+    # X_resampled_renn, y_resampled_renn = dataset.balanced_by_imbalanced_learn_method(
+    #     RepeatedEditedNearestNeighbours(
+    #         n_neighbors=5, kind_sel='all', max_iter=100))
     # balanced_classification(dataset, X_resampled_renn, y_resampled_renn,
     #                         'RepeatedEditedNearestNeighbours_kind_sel=all_max_iter=100', 20)
-    # balanced_classification(dataset, X_resampled_renn, y_resampled_renn,
-    #                         'RepeatedEditedNearestNeighbours_kind_sel=all_max_iter=100', 20)
-
-    # AllKNN (over-sampling cleaning)
-    X_resampled_allknn, y_resampled_allknn = dataset.balanced_by_imbalanced_learn_method(
-        AllKNN())
-    balanced_classification(dataset, X_resampled_allknn, y_resampled_allknn,
-                            'AllKNN_sampling_kind_sel=all_n_neighbors=3', 20)
+    # # balanced_classification(dataset, X_resampled_renn, y_resampled_renn,
+    # #                         'RepeatedEditedNearestNeighbours_kind_sel=all_max_iter=100', 20)
+    # # balanced_classification(dataset, X_resampled_renn, y_resampled_renn,
+    # #                         'RepeatedEditedNearestNeighbours_kind_sel=all_max_iter=100', 20)
+    #
+    # # AllKNN (over-sampling cleaning)
+    # X_resampled_allknn, y_resampled_allknn = dataset.balanced_by_imbalanced_learn_method(
+    #     AllKNN())
     # balanced_classification(dataset, X_resampled_allknn, y_resampled_allknn,
     #                         'AllKNN_sampling_kind_sel=all_n_neighbors=3', 20)
-    # balanced_classification(dataset, X_resampled_allknn, y_resampled_allknn,
-    #                         'AllKNN_sampling_kind_sel=all_n_neighbors=3', 20)
-
-    # NeighbourhoodCleaningRule (over-sampling)
-    X_resampled_ncr, y_resampled_ncr = dataset.balanced_by_imbalanced_learn_method(
-        NeighbourhoodCleaningRule(kind_sel='mode'))
-    balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr,
-                            'NeighbourhoodCleaningRule_multilabel_kind_sel=mode', 20)
+    # # balanced_classification(dataset, X_resampled_allknn, y_resampled_allknn,
+    # #                         'AllKNN_sampling_kind_sel=all_n_neighbors=3', 20)
+    # # balanced_classification(dataset, X_resampled_allknn, y_resampled_allknn,
+    # #                         'AllKNN_sampling_kind_sel=all_n_neighbors=3', 20)
+    #
+    # # NeighbourhoodCleaningRule (over-sampling)
+    # X_resampled_ncr, y_resampled_ncr = dataset.balanced_by_imbalanced_learn_method(
+    #     NeighbourhoodCleaningRule(kind_sel='mode'))
     # balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr,
     #                         'NeighbourhoodCleaningRule_multilabel_kind_sel=mode', 20)
-    # balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr,
-    #                         'NeighbourhoodCleaningRule_multilabel_kind_sel=mode', 20)
-
-    # TomekLinks (over-sampling cleaning)
-    # параметров у метода нет (majority не работает)
-    X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method(TomekLinks())
-    balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr,
+    # #                         'NeighbourhoodCleaningRule_multilabel_kind_sel=mode', 20)
+    # # balanced_classification(dataset, X_resampled_ncr, y_resampled_ncr,
+    # #                         'NeighbourhoodCleaningRule_multilabel_kind_sel=mode', 20)
+    #
+    # # TomekLinks (over-sampling cleaning)
+    # # параметров у метода нет (majority не работает)
+    # X_resampled_tomeklinks, y_resampled_tomeklinks = dataset.balanced_by_imbalanced_learn_method(TomekLinks())
     # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks_multilabel', 20)
-
-    # CondensedNearestNeighbour (over-sampling cleaning)
-    # X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(
-    #     CondensedNearestNeighbour())
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour', 20)
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour', 20)
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour', 20)
-
-    X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(
-        CondensedNearestNeighbour(n_neighbors=1))
-    balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_1_neighbors', 20)
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_1_neighbors', 20)
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_1_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_tomeklinks, y_resampled_tomeklinks, 'TomekLinks_multilabel', 20)
+    #
+    # # CondensedNearestNeighbour (over-sampling cleaning)
+    # # X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(
+    # #     CondensedNearestNeighbour())
+    # # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour', 20)
+    # # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour', 20)
+    # # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour', 20)
     #
     # X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(
-    #     CondensedNearestNeighbour(n_neighbors=5))
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_5_neighbors', 20)
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_5_neighbors', 20)
-    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_5_neighbors', 20)
-
-    # InstanceHardnessThreshold (over-sampling cleaning)
-    X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method(
-        InstanceHardnessThreshold(estimator=LogisticRegression(solver='lbfgs', multi_class='auto'), cv=10))
-    balanced_classification(dataset, X_resampled_iht, y_resampled_iht,
-                            'InstanceHardnessThreshold_multilabel_LogisticRegression_cv_10', 20)
+    #     CondensedNearestNeighbour(n_neighbors=1))
+    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_1_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_1_neighbors', 20)
+    # # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_1_neighbors', 20)
+    # #
+    # X_resampled_cnn, y_resampled_cnn = dataset.balanced_by_imbalanced_learn_method(
+    #     CondensedNearestNeighbour(n_neighbors=17))
+    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_17_neighbors', 15)
+    # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_17_neighbors', 15)
+    # # balanced_classification(dataset, X_resampled_cnn, y_resampled_cnn, 'CondensedNearestNeighbour_5_neighbors', 20)
+    #
+    # # InstanceHardnessThreshold (over-sampling cleaning)
+    # X_resampled_iht, y_resampled_iht = dataset.balanced_by_imbalanced_learn_method(
+    #     InstanceHardnessThreshold(estimator=LogisticRegression(solver='lbfgs', multi_class='auto'), cv=10))
     # balanced_classification(dataset, X_resampled_iht, y_resampled_iht,
     #                         'InstanceHardnessThreshold_multilabel_LogisticRegression_cv_10', 20)
     # balanced_classification(dataset, X_resampled_iht, y_resampled_iht,
     #                         'InstanceHardnessThreshold_multilabel_LogisticRegression_cv_10', 20)
+    # balanced_classification(dataset, X_resampled_iht, y_resampled_iht,
+    #                         'InstanceHardnessThreshold_multilabel_LogisticRegression_cv_10', 20)
 
-    # combined method
-    # SMOTEENN
+    # # OneSidedSelection
+    # X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method(
+    #     OneSidedSelection(sampling_strategy='majority'))
+    # X_resampled_oss, y_resampled_oss = dataset.balanced_by_imbalanced_learn_method(
+    #     OneSidedSelection(sampling_strategy='not minority', n_neighbors=7))
+    # balanced_classification(dataset, X_resampled_oss, y_resampled_oss, 'OneSidedSelection_not minority_test', 15)
+
+    #
+    # # combined method
+    # # SMOTEENN_overfit
+    # # X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
+    # #     SMOTEENN_overfit(sampling_strategy='not minority', smote=smote_4, enn=enn_2_mode))
+    # # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn,
+    # #                         'SMOTEENN_multilabel_smote_4_enn_2_mode', 20)
+    # # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn,
+    # #                         'SMOTEENN_multilabel_smote_4_enn_2_mode', 20)
+    # # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn,
+    # #                         'SMOTEENN_multilabel_smote_4_enn_2_mode', 20)
+    #
     # X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
-    #     SMOTEENN(sampling_strategy='not minority', smote=smote_4, enn=enn_2_mode))
-    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn,
-    #                         'SMOTEENN_multilabel_smote_4_enn_2_mode', 20)
-    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn,
-    #                         'SMOTEENN_multilabel_smote_4_enn_2_mode', 20)
-    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn,
-    #                         'SMOTEENN_multilabel_smote_4_enn_2_mode', 20)
-
-    X_resampled_smoteenn, y_resampled_smoteenn = dataset.balanced_by_imbalanced_learn_method(
-        SMOTEENN(sampling_strategy='not minority'))
-    balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel', 20)
+    #     SMOTEENN_overfit(sampling_strategy='not minority'))
     # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel', 20)
-
-    # SMOTETomek
-    X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(
-        SMOTETomek())
-    balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel', 20)
+    # # # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel', 20)
+    # # # balanced_classification(dataset, X_resampled_smoteenn, y_resampled_smoteenn, 'SMOTEENN_multilabel', 20)
+    # #
+    # # # SMOTETomek
+    # X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(
+    #     SMOTETomek())
     # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel', 20)
-    # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel', 20)
-
-
+    # # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel', 20)
+    # # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel', 20)
+    #
+    #
     # X_resampled_smotetomek, y_resampled_smotetomek = dataset.balanced_by_imbalanced_learn_method(
     #     SMOTETomek(sampling_strategy='not minority', smote=smote_4, tomek=TomekLinks()))
     # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel_smote_4',
     #                         20)
-    # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel_smote_4',
-    #                         20)
-    # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel_smote_4',
-    #                         20)
+    # # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel_smote_4',
+    # #                         20)
+    # # balanced_classification(dataset, X_resampled_smotetomek, y_resampled_smotetomek, 'SMOTETomek_multilabel_smote_4',
+    # #                         20)
 
 
 if __name__ == "__main__":
