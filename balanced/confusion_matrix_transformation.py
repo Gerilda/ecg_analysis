@@ -6,6 +6,46 @@ from statistics import mean
 from abc import ABC
 
 
+def save_f1_score(classes, confusion_matrices, method, label_tag):
+    confusion_matrices_dict = dict(zip(classes, confusion_matrices))
+    cm = ConfMatrix(classes, confusion_matrices_dict, dict_test={})
+
+    f1_begin = cm.f1_score_dict()
+    f1_dict_begin = dict(zip(classes, f1_begin))
+
+    with open('C:/Anastasia/ecg_analysis/data/processed/f1_score/' + method + "_" + label_tag + ".pkl",
+              'wb') as f:
+        pickle.dump(f1_dict_begin, f)
+
+    print(method, ' ', label_tag, " f1_start: ", f1_dict_begin)
+    print("Mean F1-SCORE: ", cm.f1_mean)
+    print()
+
+    return
+
+def draw_conf_matrix_release(classes, confusion_matrices, method, label_tag):
+    biggest_classes_conf_matrices = zip(classes, confusion_matrices)
+
+    fig, axes = plt.subplots(1, 5, figsize=(20, 7), dpi=87)
+    axes = axes.ravel()
+
+    for axe, (title, cf) in zip(axes, biggest_classes_conf_matrices):
+        disp = ConfusionMatrixDisplay(cf)
+        disp.plot(ax=axe)
+        disp.im_.colorbar.remove()
+        disp.ax_.set_title(title)
+
+        fig.suptitle(method + "\n" + label_tag, y=0.85, fontsize=16)
+
+    fig.savefig(
+        'C:/Anastasia/ecg_analysis/data/processed/conf_matrix/from_f1_dict_file/' + label_tag + '/confmatr_' + method + "_" + label_tag + ".png",
+        bbox_inches='tight')
+
+
+    plt.close()
+
+    return confusion_matrices
+
 def build_conf_matrix_raw(classes, confusion_matrices, method, label_tag):
     # classes = list(dataset.superclasses_mlb.classes_)
     super_classes = ['NORM', 'STTC', 'CD', 'MI', 'HYP']
@@ -27,6 +67,8 @@ def build_conf_matrix_raw(classes, confusion_matrices, method, label_tag):
         pickle.dump(f1_dict_begin, f)
 
     print(method, " f1_start: ", f1_begin)
+    print("Mean F1-SCORE: ", cm.f1_mean)
+    print()
 
     count = np.sum(confusion_matrices[0])
     k = 860 / count
@@ -208,7 +250,6 @@ class ConfMatrix(ABC):
             disp.ax_.set_title(title)
 
         fig.suptitle(method + "\n" + label_tag, y=0.85, fontsize=16)
-        #'Grade Sheet', x=0.5, y=1.05, fontsize=30, weight='bold')
 
         fig.savefig(path_to_conf_matr, bbox_inches='tight')
 
@@ -287,7 +328,6 @@ def build_conf_matrix_release(classes, confusion_matrices, method, label_tag):
     return
 
 
-
 def main():
     classes = ['CD', 'STTC', 'HYP', 'MI', 'NORM']
     confusion_matrices = np.array([
@@ -297,19 +337,41 @@ def main():
         [[1290, 118], [62, 154]],
         [[752, 167], [28, 677]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'Imbalanced', 'singlelabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'Imbalanced', 'singlelabel')
+    save_f1_score(classes, confusion_matrices, 'Imbalanced', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'Imbalanced', 'singlelabel')
 
-    classes = ['CD', 'HYP', 'STTC', 'NORM', 'MI']
+    classes = ['CD', 'STTC', 'HYP', 'MI', 'NORM']  # nice
     confusion_matrices = np.array([
-        [[1135, 221], [215, 53]],
-        [[1480, 24], [109, 11]],
-        [[866, 443], [100, 215]],
-        [[234, 685], [43, 662]],
-        [[197, 1211], [5, 211]]
+        [[658, 75], [39, 88]],
+        [[605, 81], [38, 136]],
+        [[697, 94], [26, 43]],
+        [[686, 78], [21, 75]],
+        [[287, 179], [4, 390]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'NearMiss', 'singlelabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'NearMiss', 'singlelabel')
+    save_f1_score(classes, confusion_matrices, 'RandomOverSampler', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'RandomOverSampler', 'singlelabel')
+
+    classes = ['STTC', 'HYP', 'MI', 'CD', 'NORM']  # nice
+    confusion_matrices = np.array([
+        [[650, 36], [35, 139]],
+        [[761, 30], [25, 44]],
+        [[704, 60], [24, 72]],
+        [[517, 216], [13, 114]],
+        [[307, 159], [0, 394]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'SMOTE', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'SMOTE', 'singlelabel')
+
+    classes = ['HYP', 'CD', 'STTC', 'MI', 'NORM']  # nice
+    confusion_matrices = np.array([
+        [[713, 78], [39, 30]],
+        [[629, 104], [26, 101]],
+        [[590, 96], [18, 156]],
+        [[741, 23], [16, 80]],
+        [[349, 117], [5, 389]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'ADASYN', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'ADASYN', 'singlelabel')
 
     classes = ['STTC', 'CD', 'HYP', 'MI', 'NORM']
     confusion_matrices = np.array([
@@ -319,8 +381,23 @@ def main():
         [[1049, 353], [77, 151]],
         [[520, 410], [48, 652]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RandomUnderSampler', 'singlelabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'RandomUnderSampler', 'singlelabel')
+    save_f1_score(classes, confusion_matrices, 'RandomUnderSampler', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'RandomUnderSampler', 'singlelabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RandomUnderSampler', 'singlelabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'RandomUnderSampler', 'singlelabel')
+
+    classes = ['CD', 'HYP', 'STTC', 'NORM', 'MI']
+    confusion_matrices = np.array([
+        [[1135, 221], [215, 53]],
+        [[1480, 24], [109, 11]],
+        [[866, 443], [100, 215]],
+        [[234, 685], [43, 662]],
+        [[197, 1211], [5, 211]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'NearMiss', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'NearMiss', 'singlelabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'NearMiss', 'singlelabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'NearMiss', 'singlelabel')
 
     classes = ['CD', 'HYP', 'NORM', 'STTC', 'MI']
     confusion_matrices = np.array([
@@ -330,8 +407,32 @@ def main():
         [[576, 103], [20, 17]],
         [[647, 46], [15, 8]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'EditedNearestNeighbours', 'singlelabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'EditedNearestNeighbours', 'singlelabel')
+    save_f1_score(classes, confusion_matrices, 'EditedNearestNeighbours', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'EditedNearestNeighbours', 'singlelabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'EditedNearestNeighbours', 'singlelabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'EditedNearestNeighbours', 'singlelabel')
+
+    classes = ['STTC', 'NORM', 'HYP', 'MI', 'CD']  # nice
+    confusion_matrices = np.array([
+        [[648, 38], [168, 6]],
+        [[276, 190], [44, 350]],
+        [[724, 67], [30, 39]],
+        [[315, 449], [11, 85]],
+        [[41, 692], [6, 121]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'RepeatedEditedNearestNeighbours', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'RepeatedEditedNearestNeighbours', 'singlelabel')
+
+    classes = ['CD', 'NORM', 'HYP', 'STTC', 'MI']  # nice
+    confusion_matrices = np.array([
+        [[718, 15], [118, 9]],
+        [[319, 147], [60, 334]],
+        [[761, 30], [52, 17]],
+        [[325, 361], [20, 154]],
+        [[414, 350], [9, 87]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'AllKNN', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'AllKNN', 'singlelabel')
 
     classes = ['HYP', 'CD', 'MI', 'STTC', 'NORM']
     confusion_matrices = np.array([
@@ -341,8 +442,10 @@ def main():
         [[1119, 182], [29, 286]],
         [[714, 205], [13, 684]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'TomekLinks', 'singlelabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'TomekLinks', 'singlelabel')
+    save_f1_score(classes, confusion_matrices, 'TomekLinks', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'TomekLinks', 'singlelabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'TomekLinks', 'singlelabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'TomekLinks', 'singlelabel')
 
     classes = ['HYP', 'NORM', 'STTC', 'CD', 'MI']
     confusion_matrices = np.array([
@@ -352,10 +455,80 @@ def main():
         [[122, 127], [15, 82]],
         [[218, 93], [10, 25]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'CondensedNearestNeighbour', 'singlelabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'CondensedNearestNeighbour', 'singlelabel')
+    save_f1_score(classes, confusion_matrices, 'CondensedNearestNeighbour', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'CondensedNearestNeighbour', 'singlelabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'CondensedNearestNeighbour', 'singlelabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'CondensedNearestNeighbour', 'singlelabel')
 
-    # multilabel
+    classes = ['CD', 'NORM', 'HYP', 'STTC', 'MI']  # nice
+    confusion_matrices = np.array([
+        [[698, 35], [117, 10]],
+        [[290, 176], [71, 323]],
+        [[777, 14], [65, 4]],
+        [[392, 294], [27, 147]],
+        [[419, 345], [9, 87]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'InstanceHardnessThreshold', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'InstanceHardnessThreshold', 'singlelabel')
+
+    classes = ['CD', 'STTC', 'NORM', 'HYP', 'MI']  # nice
+    confusion_matrices = np.array([
+        [[718, 15], [124, 3]],
+        [[477, 209], [107, 67]],
+        [[295, 171], [88, 306]],
+        [[777, 14], [65, 4]],
+        [[354, 410], [7, 89]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'OneSidedSelection', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'OneSidedSelection', 'singlelabel')
+
+    classes = ['NORM', 'HYP', 'CD', 'MI', 'STTC']  # nice
+    confusion_matrices = np.array([
+        [[373, 93], [70, 324]],
+        [[790, 1], [63, 6]],
+        [[469, 264], [36, 91]],
+        [[548, 216], [11, 85]],
+        [[280, 406], [5, 169]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'NeighbourhoodCleaningRule', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'NeighbourhoodCleaningRule', 'singlelabel')
+
+    classes = ['MI', 'NORM', 'CD', 'STTC', 'HYP']  # nice
+    confusion_matrices = np.array([
+        [[650, 114], [78, 18]],
+        [[131, 335], [54, 340]],
+        [[110, 623], [28, 99]],
+        [[115, 571], [26, 148]],
+        [[134, 657], [15, 54]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'SMOTEENN', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'SMOTEENN', 'singlelabel')
+
+    classes = ['NORM', 'STTC', 'MI', 'CD', 'HYP']  # nice
+    confusion_matrices = np.array([
+        [[405, 61], [363, 31]],
+        [[567, 119], [148, 26]],
+        [[739, 25], [90, 6]],
+        [[578, 155], [89, 38]],
+        [[697, 94], [58, 11]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'SMOTETomek', 'singlelabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'SMOTETomek', 'singlelabel')
+
+    ################################################# MULTILABEL
+
+    classes = ['HYP', 'CD', 'STTC', 'MI', 'NORM']  # nice
+    confusion_matrices = np.array([
+        [[790, 1], [58, 11]],
+        [[615, 42], [54, 149]],
+        [[546, 80], [51, 183]],
+        [[715, 32], [47, 66]],
+        [[387, 79], [31, 363]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'Imbalanced', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'Imbalanced', 'multilabel')
+
+    # # multilabel
     classes = ['STTC', 'NORM', 'HYP', 'MI', 'CD']
     confusion_matrices = np.array([
         [[1193, 5], [327, 99]],
@@ -364,8 +537,10 @@ def main():
         [[1312, 66], [83, 163]],
         [[751, 439], [45, 389]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RandomOverSampler', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'RandomOverSampler', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'RandomOverSampler', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'RandomOverSampler', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RandomOverSampler', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'RandomOverSampler', 'multilabel')
 
     classes = ['CD', 'NORM', 'HYP', 'MI', 'STTC']
     confusion_matrices = np.array([
@@ -375,8 +550,10 @@ def main():
         [[0, 44881], [0, 45474]],
         [[0, 45358], [0, 44997]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'SMOTE', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'SMOTE', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'SMOTE', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'SMOTE', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'SMOTE', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'SMOTE', 'multilabel')
 
     classes = ['CD', 'NORM', 'HYP', 'MI', 'STTC']
     confusion_matrices = np.array([
@@ -386,19 +563,10 @@ def main():
         [[95, 44786], [30, 45444]],
         [[0, 45358], [0, 44997]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'ADASYN', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'ADASYN', 'multilabel')
-
-    classes = ['HYP', 'STTC', 'MI', 'CD', 'NORM']
-    confusion_matrices = np.array([
-        [[254, 0], [140, 6]],
-        [[116, 104], [40, 140]],
-        [[100, 117], [6, 177]],
-        [[24, 211], [4, 161]],
-        [[305, 58], [2, 35]]
-    ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'NearMiss-3', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'NearMiss_3', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'ADASYN', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'ADASYN', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'ADASYN', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'ADASYN', 'multilabel')
 
     classes = ['HYP', 'CD', 'STTC', 'MI', 'NORM']
     confusion_matrices = np.array([
@@ -408,8 +576,23 @@ def main():
         [[155, 141], [33, 263]],
         [[446, 109], [7, 30]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RandomUnderSampler', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'RandomUnderSampler', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'RandomUnderSampler', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'RandomUnderSampler', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RandomUnderSampler', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'RandomUnderSampler', 'multilabel')
+
+    classes = ['HYP', 'STTC', 'MI', 'CD', 'NORM']
+    confusion_matrices = np.array([
+        [[254, 0], [140, 6]],
+        [[116, 104], [40, 140]],
+        [[100, 117], [6, 177]],
+        [[24, 211], [4, 161]],
+        [[305, 58], [2, 35]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'NearMiss-3', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'NearMiss-3', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'NearMiss-3', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'NearMiss_3', 'multilabel')
 
     classes = ['MI', 'CD', 'NORM', 'STTC', 'HYP']
     confusion_matrices = np.array([
@@ -419,9 +602,11 @@ def main():
         [[532, 8], [2, 0]],
         [[493, 12], [1, 36]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'EditedNearestNeighbours', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'EditedNearestNeighbours', 'multilabel')
-
+    save_f1_score(classes, confusion_matrices, 'EditedNearestNeighbours', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'EditedNearestNeighbours', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'EditedNearestNeighbours', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'EditedNearestNeighbours', 'multilabel')
+    #
     classes = ['MI', 'NORM', 'HYP', 'CD', 'STTC']
     confusion_matrices = np.array([
         [[641, 11], [49, 159]],
@@ -430,8 +615,10 @@ def main():
         [[378, 477], [0, 5]],
         [[99, 761], [0, 0]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RepeatedEditedNearestNeighbours', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'RepeatedEditedNearestNeighbours', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'RepeatedEditedNearestNeighbours', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'RepeatedEditedNearestNeighbours', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'RepeatedEditedNearestNeighbours', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'RepeatedEditedNearestNeighbours', 'multilabel')
 
     classes = ['MI', 'CD', 'STTC', 'NORM', 'HYP']
     confusion_matrices = np.array([
@@ -441,8 +628,10 @@ def main():
         [[550, 304], [75, 2216]],
         [[3041, 55], [47, 2]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'AllKNN', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'AllKNN', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'AllKNN', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'AllKNN', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'AllKNN', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'AllKNN', 'multilabel')
 
     classes = ['STTC', 'HYP', 'CD', 'MI', 'NORM']
     confusion_matrices = np.array([
@@ -452,8 +641,10 @@ def main():
         [[10416, 286], [417, 1725]],
         [[6648, 618], [271, 5307]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'TomekLinks', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'TomekLinks', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'TomekLinks', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'TomekLinks', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'TomekLinks', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'TomekLinks', 'multilabel')
 
     classes = ['HYP', 'MI', 'STTC', 'NORM', 'CD']
     confusion_matrices = np.array([
@@ -463,8 +654,10 @@ def main():
         [[852, 14], [11, 6]],
         [[13, 400], [5, 465]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'CondensedNearestNeighbour', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'CondensedNearestNeighbour', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'CondensedNearestNeighbour', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'CondensedNearestNeighbour', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'CondensedNearestNeighbour', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'CondensedNearestNeighbour', 'multilabel')
 
     classes = ['HYP', 'STTC', 'CD', 'MI', 'NORM']
     confusion_matrices = np.array([
@@ -474,8 +667,21 @@ def main():
         [[164, 132], [35, 261]],
         [[446, 109], [1, 36]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'InstanceHardnessThreshold', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'InstanceHardnessThreshold', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'InstanceHardnessThreshold', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'InstanceHardnessThreshold', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'InstanceHardnessThreshold', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'InstanceHardnessThreshold', 'multilabel')
+
+    classes = ['HYP', 'CD', 'STTC', 'MI', 'NORM']  # nice
+    confusion_matrices = np.array([
+        [[645, 12], [186, 17]],
+        [[787, 4], [65, 4]],
+        [[629, 118], [42, 71]],
+        [[226, 240], [12, 382]],
+        [[291, 335], [9, 225]]
+    ])
+    save_f1_score(classes, confusion_matrices, 'OneSidedSelection', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'OneSidedSelection', 'multilabel')
 
     classes = ['CD', 'HYP', 'NORM', 'STTC', 'MI']
     confusion_matrices = np.array([
@@ -485,8 +691,10 @@ def main():
         [[2774, 40], [7, 59]],
         [[2035, 267], [4, 574]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'NeighbourhoodCleaningRule', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'NeighbourhoodCleaningRule', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'NeighbourhoodCleaningRule', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'NeighbourhoodCleaningRule', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'NeighbourhoodCleaningRule', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'NeighbourhoodCleaningRule', 'multilabel')
 
     classes = ['NORM', 'CD', 'HYP', 'MI', 'STTC']
     confusion_matrices = np.array([
@@ -496,8 +704,10 @@ def main():
         [[0, 36127], [0, 39139]],
         [[0, 31848], [0, 43418]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'SMOTEENN', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'SMOTEENN', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'SMOTEENN', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'SMOTEENN', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'SMOTEENN', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'SMOTEENN', 'multilabel')
 
     classes = ['CD', 'NORM', 'HYP', 'MI', 'STTC']
     confusion_matrices = np.array([
@@ -507,8 +717,10 @@ def main():
         [[0, 45041], [0, 45045]],
         [[0, 45042], [0, 45044]]
     ])
-    confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'SMOTETomek', 'multilabel')
-    build_conf_matrix_release(classes, confusion_matrices_raw, 'SMOTETomek', 'multilabel')
+    save_f1_score(classes, confusion_matrices, 'SMOTETomek', 'multilabel')
+    draw_conf_matrix_release(classes, confusion_matrices, 'SMOTETomek', 'multilabel')
+    # confusion_matrices_raw = build_conf_matrix_raw(classes, confusion_matrices, 'SMOTETomek', 'multilabel')
+    # build_conf_matrix_release(classes, confusion_matrices_raw, 'SMOTETomek', 'multilabel')
 
     return
 
