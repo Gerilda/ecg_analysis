@@ -10,7 +10,7 @@ def save_f1_score(classes, confusion_matrices, method, label_tag):
     confusion_matrices_dict = dict(zip(classes, confusion_matrices))
     cm = ConfMatrix(classes, confusion_matrices_dict, dict_test={})
 
-    f1_begin = cm.f1_score_dict()
+    f1_begin = cm.f1_score_list()
     f1_dict_begin = dict(zip(classes, f1_begin))
 
     with open('C:/Anastasia/ecg_analysis/data/processed/f1_score/' + method + "_" + label_tag + ".pkl",
@@ -59,7 +59,7 @@ def build_conf_matrix_raw(classes, confusion_matrices, method, label_tag):
     confusion_matrices_dict = dict(zip(classes, confusion_matrices))
     cm = ConfMatrix(classes, confusion_matrices_dict, dict_test={})
 
-    f1_begin = cm.f1_score_dict()
+    f1_begin = cm.f1_score_list()
     f1_dict_begin = dict(zip(classes, f1_begin))
 
     with open('C:/Anastasia/ecg_analysis/data/processed/f1_score/' + method + "_" + label_tag + ".pkl",
@@ -159,8 +159,14 @@ class ConfMatrix(ABC):
         # tp = self.tp(class_)
         return self.fn(class_) + self.tp(class_)
 
+    def f1_score_list(self) -> list:
+        f1_score_list = [2 * self.tp(class_) / (2 * self.tp(class_) + self.fp(class_) + self.fn(class_)) for class_ in self.classes]
+        return f1_score_list
+
     def f1_score_dict(self) -> dict:
-        f1_score_dict = [2 * self.tp(class_) / (2 * self.tp(class_) + self.fp(class_) + self.fn(class_)) for class_ in self.classes]
+        f1_score_dict = {}
+        for class_ in self.classes:
+            f1_score_dict.update({class_: 2 * self.tp(class_) / (2 * self.tp(class_) + self.fp(class_) + self.fn(class_))})
         return f1_score_dict
 
     def f1_score(self, class_) -> float:
@@ -266,7 +272,7 @@ def build_conf_matrix_release(classes, confusion_matrices, method, label_tag):
 
     cm = ConfMatrix(classes, confusion_matrices, dict_test)
 
-    f1_begin = cm.f1_score_dict()
+    f1_begin = cm.f1_score_list()
     print(method, " f1_begin: ", f1_begin)
 
     while not cm.check_count_class():
@@ -302,7 +308,7 @@ def build_conf_matrix_release(classes, confusion_matrices, method, label_tag):
     #     tmp1 = cm.count_class(class_)
     #     tmp2 = cm.dict_test[class_]
     #     tmp = 0
-    f1_end = cm.f1_score_dict()
+    f1_end = cm.f1_score_list()
     print(method, " f1_end: ", f1_end)
     print()
 
@@ -698,11 +704,11 @@ def main():
 
     classes = ['NORM', 'CD', 'HYP', 'MI', 'STTC']
     confusion_matrices = np.array([
-        [[75201, 0], [65, 0]],
-        [[0, 31956], [0, 43310]],
-        [[0, 35852], [0, 39414]],
-        [[0, 36127], [0, 39139]],
-        [[0, 31848], [0, 43418]]
+        [[263, 391], [203, 3]],
+        [[640, 75], [18, 127]],
+        [[740, 6], [51, 63]],
+        [[643, 0], [104, 113]],
+        [[490, 19], [137, 214]]
     ])
     save_f1_score(classes, confusion_matrices, 'SMOTEENN', 'multilabel')
     draw_conf_matrix_release(classes, confusion_matrices, 'SMOTEENN', 'multilabel')
