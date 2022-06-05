@@ -197,7 +197,16 @@ def main():
     # rand_build_conf_matrix_release(f1_start, 'Imbalanced', 'singlelabel')
     # # build_conf_matrix_release('Imbalanced', 'singlelabel')
     #
-    # build_conf_matrix_release('RandomOverSampler', 'singlelabel')
+    # f1 = {'CD': 0.6068965517241379, 'STTC': 0.6956521739130435, 'HYP': 0.4174757281553398, 'MI': 0.5824096385542169,
+    #  'NORM': 0.6999688473520249}
+    # rand_build_conf_matrix_release(f1, 'RandomOverSampler', 'singlelabel')
+
+    # f1 = {'STTC': 0.7965616045845272, 'HYP': 0.5153846153846154, 'MI': 0.631578947368421, 'CD': 0.4989059080962801, 'NORM': 0.6221013727560718}
+    # rand_build_conf_matrix_release(f1, 'SMOTE', 'singlelabel')
+
+    # f1 = return_f1_score_from_file('ADASYN', 'singlelabel')
+    f1 = {'HYP': 0.3389830508474576, 'CD': 0.608433734939759, 'STTC': 0.7023943661971831, 'MI': 0.7940201005025126, 'NORM': 0.6344444444444445}
+    rand_build_conf_matrix_release(f1, 'ADASYN', 'singlelabel')
 
     # f1_start = {'STTC': 0.64881773399014778, 'CD': 0.60618528610354224, 'HYP': 0.65139534883720931, 'MI': 0.662568306010929, 'NORM': 0.7900681044267877}
     # rand_build_conf_matrix_release(f1_start, 'RandomUnderSampler', 'singlelabel')
@@ -237,7 +246,7 @@ def main():
     # rand_build_conf_matrix_release(f1_start, 'InstanceHardnessThreshold', 'singlelabel')
     # # build_conf_matrix_release('InstanceHardnessThreshold', 'singlelabel')
 
-    return_f1_score_from_file('Imbalanced', 'multilabel')
+    # return_f1_score_from_file('Imbalanced', 'multilabel')
 
     # f1_start = {'STTC': 0.81358490566037733, 'NORM': 0.343241106719368, 'HYP': 0.4785430463576159,
     #             'MI': 0.6863157894736842, 'CD': 0.6964817749603804}
